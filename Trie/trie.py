@@ -1,4 +1,5 @@
 import heapq
+import pickle
 
 
 class TrieNode:
@@ -49,15 +50,20 @@ class Trie:
         )
 
 
-if __name__ == "__main__":
+def build_trie(prefix, K):
     trie = Trie()
 
-    words = [
-        "apple", "app", "application", "app",
-        "apply", "apple", "apple", "apt"
-    ]
+    with open("Dataset/preprocessed_data_for_Trie.pkl", 'rb') as f:
+        tokenized_articles = pickle.load(f)
+
+    words = [word for doc in tokenized_articles for word in doc]
 
     for w in words:
         trie.insert(w)
 
-    [print(i) for i in trie.topK("app", 3)]
+    return trie.topK(prefix, K)
+
+
+if __name__ == "__main__":
+    trie = build_trie("app", 10)
+    [print(i) for i in trie]
