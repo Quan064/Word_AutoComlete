@@ -50,10 +50,17 @@ class Trie:
         )
 
 
+<<<<<<< HEAD
 def build_trie():
     trie = Trie()
 
     with open("Dataset/training_data_for_Trie.pkl", 'rb') as f:
+=======
+def build_trie(prefix, K):
+    trie = Trie()
+
+    with open("Dataset/preprocessed_data_for_Trie.pkl", 'rb') as f:
+>>>>>>> 0bd0a8ed8cb1b861d120274accabf0b7bda20d9b
         tokenized_articles = pickle.load(f)
 
     words = [word for doc in tokenized_articles for word in doc]
@@ -61,6 +68,7 @@ def build_trie():
     for w in words:
         trie.insert(w)
 
+<<<<<<< HEAD
     return trie
 
 
@@ -78,3 +86,11 @@ if __name__ == "__main__":
 
     topK = trie.topK("app", 10)
     [print(i) for i in topK]
+=======
+    return trie.topK(prefix, K)
+
+
+if __name__ == "__main__":
+    trie = build_trie("app", 10)
+    [print(i) for i in trie]
+>>>>>>> 0bd0a8ed8cb1b861d120274accabf0b7bda20d9b
