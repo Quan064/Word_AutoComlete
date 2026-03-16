@@ -1,45 +1,69 @@
 import pickle
-from gensim import models, corpora
+import tomotopy as tp
+import matplotlib.pyplot as plt
 from gensim.models.coherencemodel import CoherenceModel
+from gensim.corpora import Dictionary
 
 
 def load_data(address):
     with open(address, 'rb') as f:
         tokenized_articles = pickle.load(f)
-
     return tokenized_articles
-
-def preprocess(tokenized_articles):
-    vocab = corpora.Dictionary(tokenized_articles)
-    vocab.filter_extremes(no_below=5, no_above=0.5)
-    corpus_bow = [vocab.doc2bow(article) for article in training_tokenized_articles]
-    
-    return vocab, corpus_bow
 
 
 if __name__ == "__main__":
+
     training_tokenized_articles = load_data("Dataset/training_data_for_LDA.pkl")
     validation_tokenized_articles = load_data("Dataset/validation_data_for_LDA.pkl")
 
-    training_vocab, training_corpus_bow = preprocess(training_tokenized_articles)
-    validation_vocab, validation_corpus_bow = preprocess(validation_tokenized_articles)
+    # dictionary cho coherence
+    dictionary = Dictionary(training_tokenized_articles)
 
-    for K_i in (5, 10, 15, 20, 25, 30, 35, 40):
-        lda_model = models.ldamodel.LdaModel(corpus=training_corpus_bow,
-                                             id2word=training_vocab,
-                                             num_topics=K_i,
-                                             passes=10,
-                                             alpha='auto',
-                                             eta='auto',
-                                             random_state=1)
+    K_values = [40, 80, 120, 140, 150, 160, 170, 180, 200, 240, 280, 320, 360, 400]
+    coherence_values = []
 
-        # Nạp thêm validation_set
+    for K_i in K_values:
 
-        # Tính điểm Coherence
-        coherence_model_lda = CoherenceModel(model=lda_model,
-                                             texts=training_tokenized_articles,
-                                             dictionary=training_vocab,
-                                             coherence='c_v')
-        coherence_lda = coherence_model_lda.get_coherence()
+        # Train LDA bằng CGS
+        model = tp.LDAModel(
+            k=K_i,
+            alpha=0.1,
+            eta=0.01,
+            seed=1
+        )
 
-        print((K_i, coherence_lda))
+        # thêm tài liệu train
+        for doc in training_tokenized_articles:
+            model.add_doc(doc)
+
+        # train
+        for i in range(0, 200, 10):
+            model.train(10)
+
+        # lấy top words cho từng topic
+        topics = []
+        for k in range(model.k):
+            topic_words = [w for w, _ in model.get_topic_words(k, top_n=10)]
+            topics.append(topic_words)
+
+        # tính coherence trên validation
+        coherence_model = CoherenceModel(
+            topics=topics,
+            texts=validation_tokenized_articles,
+            dictionary=dictionary,
+            coherence='c_v'
+        )
+
+        coherence = coherence_model.get_coherence()
+        coherence_values.append(coherence)
+
+        print((K_i, coherence))
+
+    # Vẽ đồ thị
+    plt.figure(figsize=(8,5))
+    plt.plot(K_values, coherence_values, marker='o')
+    plt.xlabel("Number of Topics (K)")
+    plt.ylabel("Coherence Score")
+    plt.title("Topic Coherence vs Number of Topics")
+    plt.grid(True)
+    plt.show()
