@@ -93,6 +93,9 @@ def get_word_topic_distribution(lda_model, word, word_to_id, nlp):
         # Word not in vocabulary, return uniform distribution
         return [1.0 / lda_model.k for _ in range(lda_model.k)]
     
+    
+    #🔴Call every candidate word and each word loop over all topics -> expensive🔴
+
     # Get word probabilities for each topic
     word_topic_dist = []
     for topic_id in range(lda_model.k):
@@ -149,6 +152,7 @@ def suggest_words(lda_model, trie, word_to_id, nlp, user_input, num_suggestions=
         return []
     
     prefix = words[-1]
+    #🔴 No position weight 🔴
     context = " ".join(words[:-1]) if len(words) > 1 else ""
     
     if verbose:
@@ -192,8 +196,10 @@ def suggest_words(lda_model, trie, word_to_id, nlp, user_input, num_suggestions=
         scored_candidates.append((word, score, freq))
     
     # Step 6: Sort by score (descending)
+    #🔴 x[1] is LDA score which is a very small float number, x[2] is freq which is an huge interger number 🔴
     alpha = 0.8
     scored_candidates.sort(
+        #🔴 since x[2] is a huge number, so that the overall result will be dominated by freq -> turn to basic frequency-based autocomplete 🔴
         key=lambda x: alpha * x[1] + (1 - alpha) * x[2],
         reverse=True
     )
