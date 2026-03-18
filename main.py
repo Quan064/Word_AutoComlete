@@ -198,9 +198,10 @@ def suggest_words(lda_model, trie, word_to_id, nlp, user_input, num_suggestions=
     # Step 6: Sort by score (descending)
     #🔴 x[1] is LDA score which is a very small float number, x[2] is freq which is an huge interger number 🔴
     alpha = 0.8
+    max_freq = max(freq for _, _, freq in scored_candidates)
+
     scored_candidates.sort(
-        #🔴 since x[2] is a huge number, so that the overall result will be dominated by freq -> turn to basic frequency-based autocomplete 🔴
-        key=lambda x: alpha * x[1] + (1 - alpha) * x[2],
+        key=lambda x: alpha * x[1] + (1 - alpha) * (x[2] / max_freq),
         reverse=True
     )
     
