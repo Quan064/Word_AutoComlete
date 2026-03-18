@@ -7,23 +7,25 @@ from Trie.trie import Trie, TrieNode
 
 def load_models():
     """Load pre-trained LDA model and Trie"""
-    # Load LDA model
     lda_model = tp.LDAModel.load("LDA_CGS/lda_cgs.bin")
     
-    # Build word to id mapping
     word_to_id = {}
     for idx in range(lda_model.num_vocabs):
         word = lda_model.used_vocabs[idx]
         word_to_id[word] = idx
     
-    # Load Trie
     with open("Trie/Trie.pkl", 'rb') as f:
         trie = pickle.load(f)
     
-    # Load spaCy for tokenization
     nlp = spacy.load('en_core_web_sm', disable=['parser', 'ner'])
     
-    return lda_model, trie, word_to_id, nlp
+    # ✅ NEW: cache topic-word distributions
+    topic_word_matrix = [
+        lda_model.get_topic_word_dist(topic_id)
+        for topic_id in range(lda_model.k)
+    ]
+    
+    return lda_model, trie, word_to_id, nlp, topic_word_matrix
 
 
 def tokenize(text, nlp):
@@ -79,32 +81,19 @@ def normalize_word(word, nlp):
     return token.lemma_
 
 
-def get_word_topic_distribution(lda_model, word, word_to_id, nlp):
-    """
-    Get P(word | topic) for each topic
-    Returns array where index is topic_id and value is P(word | topic)
-    """
-    # Normalize word to match LDA vocabulary (lemmatization + lower-case)
+def get_word_topic_distribution(topic_word_matrix, word, word_to_id, nlp):
     norm_word = normalize_word(word, nlp)
-
-    # Get word ID
     word_id = word_to_id.get(norm_word)
-    if word_id is None:
-        # Word not in vocabulary, return uniform distribution
-        return [1.0 / lda_model.k for _ in range(lda_model.k)]
-    
-    
-    #🔴Call every candidate word and each word loop over all topics -> expensive🔴
 
-    # Get word probabilities for each topic
-    word_topic_dist = []
-    for topic_id in range(lda_model.k):
-        # Get word distribution for this topic
-        # Returns array where word_dist[word_id] is P(word | topic)
-        word_dist = lda_model.get_topic_word_dist(topic_id)
-        word_topic_dist.append(float(word_dist[word_id]))
-    
-    return word_topic_dist
+    num_topics = len(topic_word_matrix)
+
+    if word_id is None:
+        return [1.0 / num_topics] * num_topics
+
+    return [
+        float(topic_word_matrix[topic_id][word_id])
+        for topic_id in range(num_topics)
+    ]
 
 
 def calculate_suggestion_score(context_topic_dist, word_topic_dist):
@@ -122,7 +111,7 @@ def calculate_suggestion_score(context_topic_dist, word_topic_dist):
     return score
 
 
-def suggest_words(lda_model, trie, word_to_id, nlp, user_input, num_suggestions=5, verbose=False):
+def suggest_words(lda_model, trie, word_to_id, nlp, topic_word_matrix, user_input, num_suggestions=5, verbose=False):
     """
     Main suggestion pipeline
     
@@ -178,8 +167,21 @@ def suggest_words(lda_model, trie, word_to_id, nlp, user_input, num_suggestions=
         print(f"  Top topics from context: {top_topics}")
     
     # Step 4: Get candidate words from Trie
-    candidates = trie.topK(prefix, num_suggestions * 3)  # Get more candidates to filter
-    
+    candidates = trie.topK(prefix, num_suggestions * 3)
+
+    if not candidates:
+        if verbose:
+            print(f"  No candidates found for prefix '{prefix}'")
+        return []
+
+    filtered_candidates = []
+    for word, freq in candidates:
+        norm_word = normalize_word(word, nlp)
+        if norm_word in word_to_id:
+            filtered_candidates.append((word, freq))
+
+    candidates = filtered_candidates
+
     if not candidates:
         if verbose:
             print(f"  No candidates found for prefix '{prefix}'")
@@ -191,7 +193,7 @@ def suggest_words(lda_model, trie, word_to_id, nlp, user_input, num_suggestions=
     # Step 5: Calculate scores for each candidate
     scored_candidates = []
     for word, freq in candidates:
-        word_topic_dist = get_word_topic_distribution(lda_model, word, word_to_id, nlp)
+        word_topic_dist = get_word_topic_distribution(topic_word_matrix, word, word_to_id, nlp)
         score = calculate_suggestion_score(context_topic_dist, word_topic_dist)
         scored_candidates.append((word, score, freq))
     
@@ -214,7 +216,7 @@ def suggest_words(lda_model, trie, word_to_id, nlp, user_input, num_suggestions=
     return result
 
 
-def interactive_mode(lda_model, trie, word_to_id, nlp):
+def interactive_mode(lda_model, trie, word_to_id, nlp, topic_word_matrix):
     """Interactive mode for real-time suggestions"""
     print("\n" + "="*60)
     print("INTERACTIVE AUTOCOMPLETE MODE")
@@ -234,8 +236,10 @@ def interactive_mode(lda_model, trie, word_to_id, nlp):
         
         print()
         suggestions = suggest_words(
-            lda_model, trie, word_to_id, nlp, user_input, 
-            num_suggestions=10, verbose=True
+            lda_model, trie, word_to_id, nlp, topic_word_matrix,
+            user_input,
+            num_suggestions=10,
+            verbose=True
         )
         
         print("\nGợi ý kết quả:")
@@ -254,14 +258,14 @@ def main():
     print("WORD AUTOCOMPLETE - LDA + TRIE PIPELINE")
     print("="*60)
     print("\nLoading models...")
-    lda_model, trie, word_to_id, nlp = load_models()
+    lda_model, trie, word_to_id, nlp, topic_word_matrix = load_models()
     print(f"✓ LDA Model loaded: {lda_model.k} topics")
     print(f"✓ Trie loaded successfully")
     print(f"✓ Vocabulary size: {lda_model.num_vocabs}")
     print(f"✓ spaCy model loaded for tokenization")
     print()
     
-    interactive_mode(lda_model, trie, word_to_id, nlp)
+    interactive_mode(lda_model, trie, word_to_id, nlp, topic_word_matrix)
 
 
 if __name__ == "__main__":
