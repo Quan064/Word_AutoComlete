@@ -245,13 +245,22 @@ def interactive_mode(lda_model, trie, word_to_id, nlp, topic_word_matrix):
 # ================== MAIN ==================
 
 def main():
-    print("Loading...")
+    print("\n" + "="*50)
+    print("  WORD AUTOCOMPLETE SYSTEM")
+    print("="*50 + "\n")
+    
+    print("⏳ Loading models...")
     lda_model, trie, word_to_id, nlp, topic_word_matrix = load_models()
+    print("✓ Models loaded successfully\n")
 
-    print(f"LDA topics: {lda_model.k}")
-    print(f"Vocab size: {lda_model.num_vocabs}")
+    print(f"📊 LDA Topics: {lda_model.k}")
+    print(f"📚 Vocabulary Size: {lda_model.num_vocabs}\n")
 
     interactive_mode(lda_model, trie, word_to_id, nlp, topic_word_matrix)
+    
+    print("\n" + "="*50)
+    print("  Goodbye!")
+    print("="*50 + "\n")
 
 
 if __name__ == "__main__":
