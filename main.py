@@ -156,6 +156,12 @@ def suggest_words(
     # ===== COMBINE =====
     prefix_len = len(prefix)
 
+    if prefix_len <= 2:
+        alpha = 0.9   # ưu tiên context
+    elif prefix_len <= 4:
+        alpha = 0.7
+    else:
+        alpha = 0.5   # ưu tiên prefix/freq
     alpha = 0.9 if prefix_len <= 2 else (0.7 if prefix_len <= 4 else 0.5)
     final_scores = alpha * score_lda_norm + (1 - alpha) * score_trie_norm
 
