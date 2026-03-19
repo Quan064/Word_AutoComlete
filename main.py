@@ -20,7 +20,6 @@ def load_models():
 
     nlp = spacy.load('en_core_web_sm', disable=['parser', 'ner'])
 
-    # (K, V)
     topic_word_matrix = np.array([
         lda_model.get_topic_word_dist(k)
         for k in range(lda_model.k)
@@ -29,16 +28,23 @@ def load_models():
     return lda_model, trie, word_to_id, nlp, topic_word_matrix
 
 
-# ================== TOKENIZE ==================
+# ================== ANALYZE CONTEXT ==================
 
-def tokenize(text, nlp):
+def analyze_context(text, nlp):
     doc = nlp(text.lower())
-    return [
-        t.lemma_ for t in doc
-        if t.is_alpha
-        and not t.is_stop
-        and t.pos_ in ['NOUN', 'VERB', 'ADJ']
-    ]
+
+    token_count = 0
+    non_token_count = 0
+    tokens = []
+
+    for t in doc:
+        if t.is_alpha and not t.is_stop and t.pos_ in ['NOUN', 'VERB', 'ADJ']:
+            tokens.append(t.lemma_)
+            token_count += 1
+        else:
+            non_token_count += 1
+
+    return tokens, token_count, non_token_count
 
 
 # ================== LDA ==================
@@ -50,6 +56,13 @@ def infer_topic_distribution(lda_model, context_tokens):
     doc = lda_model.make_doc(context_tokens)
     topic_dist, _ = lda_model.infer(doc)
     return np.array(topic_dist)
+
+
+# ================== ENTROPY ==================
+
+def topic_entropy(dist):
+    dist = dist + 1e-9
+    return -np.sum(dist * np.log(dist))
 
 
 # ================== NORMALIZE (CACHE) ==================
@@ -95,15 +108,15 @@ def suggest_words(
         print(f"Context: '{context}'")
         print(f"Prefix: '{prefix}'")
 
-    # ===== LDA context =====
-    context_tokens = tokenize(context, nlp)
+    # ===== ANALYZE CONTEXT =====
+    context_tokens, token_count, non_token_count = analyze_context(context, nlp)
     context_topic_dist = infer_topic_distribution(lda_model, context_tokens)
 
     if context_topic_dist.sum() == 0:
         return []
 
-    # ===== Trie candidates =====
-    candidates = trie.topK(prefix, num_suggestions * 100)
+    # ===== TRIE CANDIDATES =====
+    candidates = trie.topK(prefix, num_suggestions * 20)
     if not candidates:
         return []
 
@@ -130,53 +143,69 @@ def suggest_words(
     lemmas = list(lemma_groups.keys())
     word_ids = np.array([word_to_id[l] for l in lemmas])
 
-    # (K, N)
     word_topic_matrix = topic_word_matrix[:, word_ids]
 
-    # Top topics
+    # ===== LDA SCORE =====
     top_k = 3
     top_idx = np.argsort(context_topic_dist)[-top_k:]
 
-    context_top = context_topic_dist[top_idx]         # (k,)
-    word_top = word_topic_matrix[top_idx, :]          # (k, N)
+    context_top = context_topic_dist[top_idx]
+    word_top = word_topic_matrix[top_idx, :]
 
-    # ===== SCORE LDA =====
-    score_lda = context_top @ word_top                # (N,)
+    score_lda = context_top @ word_top
 
-    # ===== SCORE TRIE (FREQ) =====
+    # ===== FREQ SCORE =====
     score_trie = np.array([lemma_freq[l] for l in lemmas])
 
-    # ===== NORMALIZE =====
-    def normalize(x):
-        return (x - x.min()) / (x.max() - x.min() + 1e-9)
-
-    score_lda_norm = normalize(score_lda)
-    score_trie_norm = normalize(score_trie)
-
-    # ===== COMBINE =====
-    prefix_len = len(prefix)
-
-    if prefix_len <= 2:
-        alpha = 0.9   # ưu tiên context
-    elif prefix_len <= 4:
-        alpha = 0.7
-    else:
-        alpha = 0.5   # ưu tiên prefix/freq
-    alpha = 0.9 if prefix_len <= 2 else (0.7 if prefix_len <= 4 else 0.5)
-    final_scores = alpha * score_lda_norm + (1 - alpha) * score_trie_norm
-
-    # ===== SELECT BEST WORD PER LEMMA =====
+    # ===== CHỌN WORD ĐẠI DIỆN =====
     final_words = []
-
     for lemma in lemmas:
         best_word = max(lemma_groups[lemma], key=lambda x: x[1])[0]
         final_words.append(best_word)
 
-    final_scores = np.array(final_scores)
+    # ===== TÍNH SLOT (CORE IDEA) =====
+    semantic_ratio = token_count / (token_count + non_token_count + 1e-9)
 
-    # ===== SORT =====
-    idx_sorted = np.argsort(final_scores)[::-1][:num_suggestions]
-    result = [(final_words[i], final_scores[i]) for i in idx_sorted]
+    entropy = topic_entropy(context_topic_dist)
+    entropy_norm = entropy / np.log(len(context_topic_dist))
+
+    lda_weight = semantic_ratio * (1 - entropy_norm)
+    lda_weight = np.clip(lda_weight, 0.1, 0.9)
+
+    num_lda = int(num_suggestions * lda_weight)
+    num_freq = num_suggestions - num_lda
+
+    if verbose:
+        print(f"semantic_ratio={semantic_ratio:.3f}, entropy={entropy_norm:.3f}")
+        print(f"→ LDA={num_lda}, FREQ={num_freq}")
+
+    # ===== RANK LDA =====
+    lda_idx = np.argsort(score_lda)[::-1]
+    lda_top = [final_words[i] for i in lda_idx[:num_lda]]
+
+    # ===== RANK FREQ =====
+    freq_idx = np.argsort(score_trie)[::-1]
+
+    freq_top = []
+    for i in freq_idx:
+        w = final_words[i]
+        if w not in lda_top:
+            freq_top.append(w)
+        if len(freq_top) >= num_freq:
+            break
+
+    # ===== MERGE (INTERLEAVE) =====
+    result_words = []
+    for i in range(max(len(lda_top), len(freq_top))):
+        if i < len(lda_top):
+            result_words.append(lda_top[i])
+        if i < len(freq_top):
+            result_words.append(freq_top[i])
+
+    result_words = result_words[:num_suggestions]
+
+    # ===== BUILD RESULT =====
+    result = [(w, 0.0) for w in result_words]  # score không còn ý nghĩa chính
 
     if verbose:
         print("Top suggestions:", result)
@@ -207,8 +236,8 @@ def interactive_mode(lda_model, trie, word_to_id, nlp, topic_word_matrix):
         )
 
         print("\nGợi ý:")
-        for i, (w, s) in enumerate(suggestions, 1):
-            print(f"{i}. {w:20s} {s:.6f}")
+        for i, (w, _) in enumerate(suggestions, 1):
+            print(f"{i}. {w}")
 
         print()
 
