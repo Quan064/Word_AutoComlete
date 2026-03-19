@@ -153,7 +153,9 @@ def suggest_words(
 
         freq_score = np.log(freq + 1)
 
-        final_score = 0.9 * scores[i] + 0.2 * freq_score
+        
+        # final_score = 0.95 * scores[i] + 0.05 * freq_score
+        final_score =  1* scores[i]
 
         final_words.append(best_word)
         final_scores.append(final_score)
