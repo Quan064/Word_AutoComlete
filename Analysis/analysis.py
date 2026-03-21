@@ -1,9 +1,14 @@
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+
 import spacy
-from Trie.trie import Trie, TrieNode
 import random
 import pickle
 import pandas as pd
 
+from Trie.trie import Trie, TrieNode
+from Trie_with_LDA.trie_with_lda import Trie_with_LDA, Trie_with_LDA_Node, load_models, suggest_words
 
 nlp = spacy.load('en_core_web_sm', disable=['parser', 'ner'])
 
@@ -113,10 +118,10 @@ def evaluate_hit_at_k_with_lda(
     Returns a dict with hit counts per prefix length.
     """
 
-    # Import here to avoid circular imports when main imports this module.
-    from main import load_models, suggest_words
+    lda_model, word_to_id, topic_word_matrix, nlp = load_models()
 
-    lda_model, trie, word_to_id, nlp_model, topic_word_matrix, word_lemma_map = load_models()
+    with open("Trie_with_LDA/Trie_with_LDA.pkl", 'rb') as f:
+        trie_with_lda = pickle.load(f)
 
     hit_count = 0
     total_queries = 0
@@ -129,7 +134,7 @@ def evaluate_hit_at_k_with_lda(
         if max_docs is not None and doc_i >= max_docs:
             break
 
-        doc = nlp_model(doc.lower())
+        doc = nlp(doc.lower())
         tokens = [t.text for t in doc if t.is_alpha and not t.is_punct and not t.is_space]
 
         for wi, word in enumerate(tokens):
@@ -146,15 +151,14 @@ def evaluate_hit_at_k_with_lda(
                 user_input = f"{context} {prefix}".strip()
 
                 suggestions = suggest_words(
+                    trie_with_lda,
                     lda_model,
-                    trie,
                     word_to_id,
-                    nlp_model,
                     topic_word_matrix,
-                    word_lemma_map,
+                    nlp,
                     user_input,
-                    num_suggestions=k,
-                    verbose=False,
+                    K=k,
+                    alpha=0.9,
                 )
 
                 suggested_words = [w for w, _ in suggestions]
@@ -255,8 +259,8 @@ if __name__ == "__main__":
     results_trie_only = evaluate_hit_at_k_trie_only(
         articles,
         k=10,
-        max_docs=20,
-        max_words_per_doc=50,
+        max_docs=50,
+        max_words_per_doc=20,
         max_prefix_len=6,
         verbose=True,
     )
@@ -266,8 +270,8 @@ if __name__ == "__main__":
     results_with_lda = evaluate_hit_at_k_with_lda(
         articles,
         k=10,
-        max_docs=20,
-        max_words_per_doc=50,
+        max_docs=50,
+        max_words_per_doc=20,
         max_prefix_len=6,
         verbose=True,
     )
@@ -370,7 +374,7 @@ if __name__ == "__main__":
         plt.grid(True, linestyle='--', alpha=0.3)
         plt.legend(fontsize=11)
         plt.tight_layout()
-        plt.savefig("hit_at_k_comparison.png", dpi=150)
+        plt.savefig("Analysis/Hit@k_comparison.png", dpi=150)
         print("✓ Saved plot to: hit_at_k_comparison.png")
         plt.show()
 
