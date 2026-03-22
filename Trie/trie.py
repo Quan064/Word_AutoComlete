@@ -7,6 +7,7 @@ class TrieNode:
         self.child = {}
         self.is_end = False
         self.freq = 0
+        self.max_subtree_freq = 0
 
 
 class Trie:
@@ -15,13 +16,17 @@ class Trie:
 
     def insert(self, word):
         cur = self.root
+        nodes = [cur]
         for c in word:
             if c not in cur.child:
                 cur.child[c] = TrieNode()
             cur = cur.child[c]
+            nodes.append(cur)
 
         cur.is_end = True
         cur.freq += 1
+        for n in nodes: 
+            n.max_subtree_freq = max(n.max_subtree_freq, cur.freq)
 
     def _dfs(self, node, cur_word, K, heap):
         if node.is_end:
