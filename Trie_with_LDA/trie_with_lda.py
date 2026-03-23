@@ -29,8 +29,8 @@ def load_models(skip_nlp=True):
 def tokenize(text, nlp_ref): #Using cache to avoid calling Spacy repeatedly.
     doc = nlp_ref(text.lower().strip())
     for t in doc:
-        if t.is_alpha and not t.is_stop and t.pos_ in ['NOUN', 'VERB', 'ADJ']:
-            return t.lemma_
+        if t.is_alpha and not t.is_stop:
+            return t.lemma_.lower()
     return ""
 
 

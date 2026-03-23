@@ -10,9 +10,8 @@ from Trie.trie import Trie, TrieNode
 from Trie_with_LDA.trie_with_lda import Trie_with_LDA, Trie_with_LDA_Node, load_models, suggest_words
 
 #Load nlp once only
-nlp = spacy.load('en_core_web_sm', disable=['parser', 'ner', 'lemmatizer', 'attribute_ruler'])
-ALPHA_CONFIG = [0, 1.0, 5.0, 10.0, 8.0, 5.0, 2.0]
-
+nlp = spacy.load('en_core_web_sm', disable=['parser', 'ner', 'attribute_ruler'])  # Enable lemmatizer
+ALPHA_CONFIG = [0, 0.1, 0.5, 1.0, 1.5, 2.0, 2.5]
 def load_test_data():
     path = "Dataset/raw_test_set.txt"
     if not os.path.exists(path): return []
