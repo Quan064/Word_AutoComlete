@@ -11,7 +11,7 @@ from Trie_with_LDA.trie_with_lda import Trie_with_LDA, Trie_with_LDA_Node, load_
 
 #Load nlp once only
 nlp = spacy.load('en_core_web_sm', disable=['parser', 'ner'])
-ALPHA_CONFIG = [0, 0.1, 0.5, 1.0, 1.5, 2.0, 2.5]
+ALPHA_CONFIG = [0, 0.1, 0.5, 1.0, 5.5, 6.0, 7.5]
 
 def load_test_data():
     path = "Dataset/raw_test_set.txt"
@@ -39,7 +39,7 @@ def pre_tokenize_articles(articles):
         # - Loại bỏ dấu câu (is_punct: -- , . ! ?)
         # - Loại bỏ khoảng trắng/xuống dòng (is_space)
         # - Loại bỏ các ký tự đặc biệt không phải chữ/số (is_alpha) nếu cần
-        tokens = [token.lemma_ for token in doc 
+        tokens = [token.lemma_.lower() for token in doc 
                   if token.is_alpha and not token.is_punct and not token.is_space and not token.text == "--" and not token.is_stop]
         
         if tokens:
@@ -63,7 +63,7 @@ def evaluate_hit_at_k(method_name, tokenized_articles, trie_obj, lda_params=None
             if wi >= len(tokens): continue
             word = tokens[wi]
             # Context window: 20 words
-            context_str = " ".join(tokens[max(0, wi-20):wi])
+            context_str = " ".join(tokens[max(0, wi-40):wi])
 
             for prefix_len in range(1, min(len(word), max_prefix_len) + 1):
                 prefix = word[:prefix_len]
