@@ -5,8 +5,13 @@ import spacy
 import pickle
 import pandas as pd
 
-from Trie.trie import Trie 
-from Trie_with_LDA.trie_with_lda import Trie_with_LDA, load_models, suggest_words
+from Trie.trie import Trie, TrieNode
+from Trie_with_LDA.trie_with_lda import (
+    Trie_with_LDA, 
+    Trie_with_LDA_Node,
+    load_models, 
+    suggest_words
+)
 
 #Load nlp once only
 nlp = spacy.load('en_core_web_sm', disable=['parser', 'ner', 'lemmatizer', 'attribute_ruler'])
