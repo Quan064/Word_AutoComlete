@@ -99,12 +99,14 @@ class Trie_with_LDA:
 
     def _dfs(self, node : Trie_with_LDA_Node, cur_word, K, heap, alpha, max_freq, len_prefix):
         if node.is_end:
-            # Normalize freq to [0, 1]
             norm_freq = np.log(1 + node.freq) / np.log(1 + max_freq)
-            
-            # Normalize dot product (cosine similarity)
+
+            if node.topic_dist is None:
+                node.topic_dist = np.zeros(170)
+
             node_norm = np.linalg.norm(node.topic_dist)
             context_norm = np.linalg.norm(self.topic_context_dist)
+
             if node_norm > 0 and context_norm > 0:
                 norm_similarity = (node.topic_dist @ self.topic_context_dist) / (node_norm * context_norm)
             else:
@@ -190,6 +192,6 @@ if __name__ == "__main__":
     print("Models loaded. Ready for suggestions.")
     K = 10
     user_input = "machine learning is very po"
-    alpha = [None, 0.25, 1.75, 2.5, 2.0, 1.75, 0.0]
+    alpha = [0.0, 0.25, 1.75, 2.5, 2.0, 1.75, 0.0]
     topK = suggest_words(trie_with_lda, lda_model, word_to_id, topic_word_matrix, nlp, user_input, K, alpha)
     [print(word, score) for word, score in topK]
