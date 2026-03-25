@@ -4,14 +4,16 @@ import random
 import spacy
 import pickle
 import pandas as pd
+import matplotlib.pyplot as plt
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from Trie.trie import Trie, TrieNode 
+from Trie.trie_freq import Trie, TrieNode 
+from Trie.normal_trie import BasicTrie, BasicTrieNode
 from Trie_with_LDA.trie_with_lda import Trie_with_LDA, Trie_with_LDA_Node, load_models, suggest_words
 
 #Load nlp once only
 nlp = spacy.load('en_core_web_sm', disable=['parser', 'ner'])
-ALPHA_CONFIG = [0, 0.1, 0.5, 1.0, 5.5, 6.0, 7.5]
+ALPHA_CONFIG = [0, 0.1, 0.5, 1.0, 1.5, 2.0, 2.5]
 
 def load_test_data():
     path = "Dataset/raw_test_set.txt"
@@ -40,14 +42,14 @@ def pre_tokenize_articles(articles):
         # - Loại bỏ khoảng trắng/xuống dòng (is_space)
         # - Loại bỏ các ký tự đặc biệt không phải chữ/số (is_alpha) nếu cần
         tokens = [token.lemma_.lower() for token in doc 
-                  if token.is_alpha and not token.is_punct and not token.is_space and not token.text == "--" and not token.is_stop]
+                  if token.is_alpha and not token.is_punct and not token.is_space and not token.text == "--" and not token.is_stop and token.pos_ in ['NOUN', 'VERB', 'ADJ']]
         
         if tokens:
             tokenized_data.append(tokens)
             
     return tokenized_data
 
-def evaluate_hit_at_k(method_name, tokenized_articles, trie_obj, lda_params=None, k=10, check_matrix=None):
+def evaluate_hit_at_k(method_name, tokenized_articles, trie_obj, lda_params=None, k=1, check_matrix=None):
     hit_count = 0
     total_queries = 0
     max_prefix_len = 6
@@ -91,32 +93,75 @@ def evaluate_hit_at_k(method_name, tokenized_articles, trie_obj, lda_params=None
                                 for pl in range(1, max_prefix_len + 1)}
     }
 
+
+def summarize_results(res_basic, res_freq, res_lda, k_value):
+    prefixes = list(res_basic["hit_rates_by_prefix"].keys())
+    
+    data = {
+        "Prefix": prefixes,
+        "Trie Only": [res_basic["hit_rates_by_prefix"][p] for p in prefixes],
+        "Trie Freq": [res_freq["hit_rates_by_prefix"][p] for p in prefixes],
+        "Trie + LDA": [res_lda["hit_rates_by_prefix"][p] for p in prefixes]
+    }
+
+    # 1. In bảng ra Terminal
+    print(f"\n{'='*60}")
+    print(f"BẢNG SO SÁNH CHỈ SỐ HIT@{k_value}")
+    print(f"{'='*60}")
+    print(f"{'Prefix':<10} | {'Trie Only':<12} | {'Trie Freq':<12} | {'Trie + LDA':<12}")
+    print("-" * 60)
+    for i in range(len(prefixes)):
+        print(f"{data['Prefix'][i]:<10} | {data['Trie Only'][i]:<12.4f} | {data['Trie Freq'][i]:<12.4f} | {data['Trie + LDA'][i]:<12.4f}")
+    print(f"{'='*60}\n")
+
+    # 2. Vẽ đồ thị
+    plt.figure(figsize=(10, 6))
+    plt.plot(data["Prefix"], data["Trie Only"], 'o--', label=f'Trie Only (Hit@{k_value})')
+    plt.plot(data["Prefix"], data["Trie Freq"], 's-', label=f'Trie Freq (Hit@{k_value})')
+    plt.plot(data["Prefix"], data["Trie + LDA"], '^', label=f'Trie + LDA (Hit@{k_value})')
+    
+    plt.title(f'So sánh hiệu năng gợi ý từ với K={k_value}')
+    plt.xlabel('Độ dài Prefix')
+    plt.ylabel(f'Hit@{k_value} Rate')
+    plt.legend()
+    plt.grid(True, alpha=0.15)
+    plt.show()
+
+# Gọi hàm sau khi đã chạy xong các bước đánh giá
+# summarize_results(res_basic_trie, res_freq_trie, res_lda_trie, k_value=3)
+
 if __name__ == "__main__":
-    articles = load_test_data()[:100]
+    articles = load_test_data()[:200]
     tokenized_articles = pre_tokenize_articles(articles)
     
     #Check matrix dùng chung để đảm bảo tính công bằng (fair comparison)
     check_matrix = [random.sample(range(len(t)), min(len(t), 10)) for t in tokenized_articles]
     print(f"Số lượng bài báo load được: {len(tokenized_articles)}")
-    print(f"Số lượng vị trí test trong bài 1: {len(check_matrix[0]) if check_matrix else 0}")
+    print(f"Số lượng vị trí test trong 1 bài: {len(check_matrix[0]) if check_matrix else 0}")
     lda_info = load_models()
     
     sys.modules['__main__'].TrieNode = TrieNode
     sys.modules['__main__'].Trie = Trie
+    sys.modules['__main__'].BasicTrieNode = BasicTrieNode
+    sys.modules['__main__'].BasicTrie = BasicTrie
     sys.modules['__main__'].Trie_with_LDA_Node = Trie_with_LDA_Node
     sys.modules['__main__'].Trie_with_LDA = Trie_with_LDA
 
-    with open("Trie/Trie.pkl", 'rb') as f: trie_only = pickle.load(f)
+    with open("Trie/Trie_Basic.pkl", 'rb') as f: basic_trie = pickle.load(f)
+    with open("Trie/Trie.pkl", 'rb') as f: trie_freq = pickle.load(f)
     with open("Trie_with_LDA/Trie_with_LDA.pkl", 'rb') as f: trie_lda = pickle.load(f)
 
-    res_trie = evaluate_hit_at_k("Trie Only", tokenized_articles, trie_only, check_matrix=check_matrix)
+    res_basic_trie = evaluate_hit_at_k("Trie Only", tokenized_articles, basic_trie, check_matrix=check_matrix)
+    res_trie_freq = evaluate_hit_at_k("Trie Freq", tokenized_articles, trie_freq, check_matrix=check_matrix)
     res_lda = evaluate_hit_at_k("Trie + LDA", tokenized_articles, trie_lda, lda_params=lda_info, check_matrix=check_matrix)
 
     results = []
     for pl in range(1, 7):
         results.append({
             "Prefix": pl,
-            "Trie Only": f"{res_trie['hit_rates_by_prefix'][pl]:.4f}",
+            "Trie Only": f"{res_basic_trie['hit_rates_by_prefix'][pl]:.4f}",
+            "Trie Freq": f"{res_trie_freq['hit_rates_by_prefix'][pl]:.4f}",
             "Trie + LDA": f"{res_lda['hit_rates_by_prefix'][pl]:.4f}"
         })
-    print(pd.DataFrame(results).to_string(index=False))
+    #print(pd.DataFrame(results).to_string(index=False))
+    summarize_results(res_basic_trie, res_trie_freq, res_lda, k_value=1)
