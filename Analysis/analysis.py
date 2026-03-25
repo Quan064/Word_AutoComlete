@@ -5,8 +5,11 @@ import spacy
 import pickle
 import pandas as pd
 
-from Trie.trie import Trie 
-from Trie_with_LDA.trie_with_lda import Trie_with_LDA, load_models, suggest_words
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from Trie.trie_freq import Trie, TrieNode
+from Trie.normal_trie import BasicTrie, BasicTrieNode
+from Trie_with_LDA.trie_with_lda import Trie_with_LDA, Trie_with_LDA_Node, load_models, suggest_words
 
 #Load nlp once only
 nlp = spacy.load('en_core_web_sm', disable=['parser', 'ner'])
@@ -128,7 +131,7 @@ def summarize_results(res_basic, res_freq, res_lda, k_value):
 # summarize_results(res_basic_trie, res_freq_trie, res_lda_trie, k_value=3)
 
 if __name__ == "__main__":
-    articles = load_test_data()[:200]
+    articles = load_test_data()[:50]
     tokenized_articles = pre_tokenize_articles(articles)
     
     #Check matrix dùng chung để đảm bảo tính công bằng (fair comparison)
