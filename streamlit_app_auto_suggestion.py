@@ -121,7 +121,7 @@ user_input = st_keyup(
     placeholder="Ví dụ: machine learning is very po...",
     key=f"keyup_field_{st.session_state.input_widget_key}",
     value=st.session_state.input_text,
-    debounce=300, #Wait for 300ms after stop typing to process
+    debounce=50, #Wait for 50ms after stop typing to process
     label_visibility="collapsed"
 )
 
