@@ -122,7 +122,7 @@ user_input = st_ace(
     key=f"keyup_field_{st.session_state.input_widget_key}",
     value=st.session_state.input_text,
     debounce=250, #Wait for 250ms after stop typing to process
-    
+    label_visibility="collapsed"
 )
 
 #Update session_state to synchronized with user_input
