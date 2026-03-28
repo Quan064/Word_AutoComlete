@@ -1,4 +1,4 @@
-﻿# TOPIC-AWARE AUTOCOMPLETE
+﻿﻿# TOPIC-AWARE AUTOCOMPLETE
 
 # I. Giới thiệu
 
@@ -414,7 +414,7 @@ policy:
 
 Ta tính **độ phù hợp với context** của một từ bằng một hàm Heuristic ($\alpha$ là hyperparameters):
 
-$$\text{score}(\text{word.freq, word.topic, context.topic}) = \frac{\log\text{word.freq}}{\log\text{maxˍfreq}} \cdot \left(1+\alpha\cdot\text{cosineˍsim}(\text{word.topic}, \text{context.topic})^2\right)$$
+$$\text{score}(\text{word.freq, word.topic, context.topic}) = \frac{\log(\text{word.freq})}{\log(\text{maxˍfreq})} \cdot \left(1+\alpha\cdot\text{cosineˍsim}(\text{word.topic}, \text{context.topic})^2\right)$$
 
 **Ý nghĩa**: Từ nào có score cao hơn thì sẽ được ưu tiên gợi ý.
 
@@ -540,6 +540,13 @@ Cách chia này giúp:
 
 
 # IV. Kiểm nghiệm
+
+## 1. Phân tích tập huấn luyện cho LDA
+
+## 2. Lựa chọn siêu tham số và hàm Heuristic
+
+## 3. Kết quả đánh giá tổng thể
+
 
 # V. Ứng dụng
 
