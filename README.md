@@ -1,4 +1,4 @@
-﻿﻿# TOPIC-AWARE AUTOCOMPLETE
+﻿# TOPIC-AWARE AUTOCOMPLETE
 
 # I. Giới thiệu
 
@@ -647,17 +647,17 @@ Tập huấn luyện cho LDA bao gồm:
 **Bảng phân tích**
 
 <figure align="center">
-  <img src="https://github.com/Quan064/Word_AutoComlete/blob/main/images/Histogram%20of%20Document%20Lengths.png?raw=true" alt="Not found">
+  <img src="https://github.com/Quan064/Word_AutoComlete/blob/main/Dataset/Histogram%20of%20Document%20Lengths.png?raw=true" alt="Not found">
   <figcaption>Phổ độ dài tài liệu tập huấn luyện của LDA sau khi tiền xử lý</figcaption>
 </figure>
 
 <figure align="center">
-  <img src="https://github.com/Quan064/Word_AutoComlete/blob/main/images/Vocabulary%20Size.png?raw=true" alt="Not found">
+  <img src="https://github.com/Quan064/Word_AutoComlete/blob/main/Dataset/Total%20Tokens.png?raw=true" alt="Not found">
   <figcaption>Kích thước tập từ vựng trước và sau khi tiền xử lý</figcaption>
 </figure>
 
 <figure align="center">
-  <img src="https://github.com/Quan064/Word_AutoComlete/blob/main/images/Total%20Tokens.png?raw=true" alt="Not found">
+  <img src="https://github.com/Quan064/Word_AutoComlete/blob/main/Dataset/Vocabulary%20Size.png?raw=true" alt="Not found">
   <figcaption>Tổng lượng token trước và sau khi tiền xử lý</figcaption>
 </figure>
 
@@ -683,14 +683,24 @@ Chúng tôi thử nghiệm với các mô hình LDA sử dụng các giá trị 
 1. **Định tính dựa trên cảm nhận của con người**
   Cảm thấy K nào có sự phân bổ chủ đề hợp lý hơn thì chọn K đó.
 
-2. **Topic Coherence** ($C_v$) (đánh giá mức độ các từ trong cùng một topic xuất hiện cùng nhau)\
+2. **Topic Coherence** ($C_v$ : đánh giá mức độ các từ trong cùng một topic xuất hiện cùng nhau)\
 Mặc dù trước đó đã nói rằng phương thức này không đảm bảo tính đúng đắn nhưng chúng tôi vẫn sẽ chọn một K bằng phương thức này phòng trường hợp này phòng trường hợp nó có thể ra kết quả Hit tốt hơn cho hàm Heuristic.
 
 #### Kết quả
 
-1. **Định tính dựa trên cảm nhận của con người**
+1. **Định tính dựa trên cảm nhận của con người**: K = 20
 
-2. **Topic Coherence** ($C_v$)
+<figure align="center">
+  <img src="https://github.com/Quan064/Word_AutoComlete/blob/main/LDA_CGS/Topic_Distribution_K20.png?raw=true" alt="Not found">
+  <figcaption>Phân bổ chủ để khi số lượng chủ đề là 20</figcaption>
+</figure>
+
+2. **Topic Coherence** ($C_v$): K = 170
+
+<figure align="center">
+  <img src="https://github.com/Quan064/Word_AutoComlete/blob/main/LDA_CGS/Coherence_K170.png?raw=true" alt="Not found">
+  <figcaption>Điểm Coherence trên tập Validation</figcaption>
+</figure>
 
 ### 2.2. Chọn hàm Heuristic để kết hợp Trie và LDA
 
@@ -746,13 +756,27 @@ Việc thử nghiệm hàm Heuristic và hyperparameter α được thực hiệ
 
 ## 3. Kết quả đánh giá tổng thể
 
+Đánh giá tổng thể mô hình được thực hiện trên tập Test (18 000 tài liệu), với mỗi tài liệu chọn 10 token  ngẫu nhiên làm query.
+
+<figure align="center">
+  <img src="https://github.com/Quan064/Word_AutoComlete/blob/main/Analysis/Model_comp.png?raw=true" alt="Not found">
+  <figcaption>Bảng so sánh tổng thể mô hình autocomplete trên tập Test (query each prefix length ~1.8 triệu)</figcaption>
+</figure>
+
 ### Nhận xét
 
 Bảng so sánh mô hình cho thấy kêt quả của Trie + LDA không có tính vượt trội rõ ràng so với Trie Freq. Mặt khác, nếu tập test có độ loãng chủ đề của ngữ cảnh lớn hơn, điểm của Trie + LDA và Trie Freq khả năng cao là sẽ hoàn toàn trùng khớp.
 
 Dưới đây là một số nguyên nhân mà chúng tôi nghi ngờ là đang gây ra tình trạng này:
 
+1. **Từ trong tài liệu đa số không nhiều ý nghĩa hoặc không theo chủ đề tổng**: Tần suất từ từ Trie Freq đã đủ để xác định gợi ý, thông tin chủ đề từ LDA không cung cấp thêm lợi thế đáng kể.
 
-# V. Ứng dụng
+2. **Linearized LDA mất thông tin**: Sử dụng trung bình cộng đơn giản thay vì Collapsed Gibbs Sampling đầy đủ, dẫn tới giảm độ chính xác.
+
+3. **Hàm Heuristic chưa tối ưu**: Phần tần suất chiếm trọng lực lớn, "lấn át" phần chủ đề. Hyperparameter $\alpha$ có thể cần điều chỉnh thêm.
+
+4. **CGS chưa đủ mạnh để capture semantic relationships**: CGS dựa trên co-occurrence statistics, không thực sự hiểu được semantic similarity giữa các từ. Ví dụ, từ "neural" và "deep" có thể không được coi là gần nhau về mặt ngữ nghĩa vì chúng xuất hiện ở vị trí khác nhau trong corpus. Word embeddings (Word2Vec, FastText, BERT) có khả năng capture được các mối quan hệ ngữ nghĩa sâu hơn, giúp cải thiện chất lượng gợi ý.
+
+# V. Cách chạy chương trình
 
 # VI. Kết luận
