@@ -43,14 +43,14 @@ def pre_tokenize_articles(articles):
         # - Loại bỏ khoảng trắng/xuống dòng (is_space)
         # - Loại bỏ các ký tự đặc biệt không phải chữ/số (is_alpha) nếu cần
         tokens = [token.lemma_.lower() for token in doc 
-                  if token.is_alpha and not token.is_punct and not token.is_space and not token.text == "--" and not token.is_stop and token.pos_ in ['NOUN', 'VERB', 'ADJ']]
+                  if token.is_alpha and not token.is_punct and not token.is_space and not token.text == "--" and not token.is_stop]
         
         if tokens:
             tokenized_data.append(tokens)
             
     return tokenized_data
 
-def evaluate_hit_at_k(method_name, tokenized_articles, trie_obj, lda_params=None, k=1, check_matrix=None):
+def evaluate_hit_at_k(method_name, tokenized_articles, trie_obj, lda_params=None, k=5, check_matrix=None):
     hit_count = 0
     total_queries = 0
     max_prefix_len = 6
@@ -62,6 +62,8 @@ def evaluate_hit_at_k(method_name, tokenized_articles, trie_obj, lda_params=None
 
     for doc_i, tokens in enumerate(tokenized_articles):
         if not tokens: continue
+        if (doc_i + 1) % 10 == 0:
+            print(f"Đang đánh giá bài báo thứ {doc_i + 1}/{len(tokenized_articles)}...")
         for wi in check_matrix[doc_i]:
             if wi >= len(tokens): continue
             word = tokens[wi]
@@ -79,9 +81,6 @@ def evaluate_hit_at_k(method_name, tokenized_articles, trie_obj, lda_params=None
                 else:
                     suggested_words = [w for w, _ in trie_obj.topK(prefix, k)]
                  
-                print(f"--- Testing Method: {method_name} ---")
-                print(f"Target: {word} | Prefix: {prefix}")
-                print(f"Top {k} Suggestions: {suggested_words}")
                 if word in suggested_words[:k]:
                     hit_count += 1
                     hit_counts_by_prefix[prefix_len] += 1
@@ -117,9 +116,9 @@ def summarize_results(res_basic, res_freq, res_lda, k_value):
 
     # 2. Vẽ đồ thị
     plt.figure(figsize=(10, 6))
-    plt.plot(data["Prefix"], data["Trie Only"], 'o--', label=f'Trie Only (Hit@{k_value})')
+    plt.plot(data["Prefix"], data["Trie Only"], 'o-', label=f'Trie Only (Hit@{k_value})')
     plt.plot(data["Prefix"], data["Trie Freq"], 's-', label=f'Trie Freq (Hit@{k_value})')
-    plt.plot(data["Prefix"], data["Trie + LDA"], '^', label=f'Trie + LDA (Hit@{k_value})')
+    plt.plot(data["Prefix"], data["Trie + LDA"], '^-', label=f'Trie + LDA (Hit@{k_value})')
     
     plt.title(f'So sánh hiệu năng gợi ý từ với K={k_value}')
     plt.xlabel('Độ dài Prefix')
@@ -132,7 +131,7 @@ def summarize_results(res_basic, res_freq, res_lda, k_value):
 # summarize_results(res_basic_trie, res_freq_trie, res_lda_trie, k_value=3)
 
 if __name__ == "__main__":
-    articles = load_test_data()[:1000]
+    articles = load_test_data()
     tokenized_articles = pre_tokenize_articles(articles)
     
     #Check matrix dùng chung để đảm bảo tính công bằng (fair comparison)
@@ -165,4 +164,4 @@ if __name__ == "__main__":
             "Trie + LDA": f"{res_lda['hit_rates_by_prefix'][pl]:.4f}"
         })
     #print(pd.DataFrame(results).to_string(index=False))
-    summarize_results(res_basic_trie, res_trie_freq, res_lda, k_value=3)
+    summarize_results(res_basic_trie, res_trie_freq, res_lda, k_value=5)

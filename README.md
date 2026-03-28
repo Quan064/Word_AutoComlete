@@ -106,21 +106,50 @@ cat, car
 ```
 
 
-### Độ phức tạp
+### Sắp xếp kết quả theo tần suất (Heap Sort)
 
-Liệt kê các gợi ý:
+#### Vấn đề
 
-$$
-O(L+M)
-$$
+Trie chỉ trả về danh sách các từ khớp với prefix, nhưng **không sắp xếp theo mức độ phổ biến**. Người dùng thường mong muốn những từ **dùng thường xuyên nhất** được gợi ý trước.
 
-Trong đó:
+#### Giải pháp: Heap Sort by Frequency
 
-- $L$ : độ dài prefix
-- $M$ : số lượng ký tự có trong các nhánh con bên dưới nút tiền tố cuối cùng
+**Ý tưởng:**
 
-→ Rất nhanh, phù hợp realtime
+- Mỗi nút từ trong Trie lưu trữ thêm **tần suất xuất hiện** của từ đó
+- Khi tìm kiếm, sau khi duyệt nhánh trie, sử dụng **Heap (Min-Heap)** để sắp xếp các từ theo tần suất giảm dần
+- Trả về top-K kết quả có tần suất cao nhất
 
+#### Cấu trúc dữ liệu nút Trie
+
+```
+Node {
+  char: character,
+  children: Map<char, Node>,
+  frequency: int,        // ← Thêm tần suất
+  is_end_of_word: bool
+}
+```
+
+#### Ví dụ
+
+Với từ khóa `ca`:
+
+```
+Trie trả về: cat, car, can, call, case
+
+Tần suất:
+- cat:  100 (phổ biến)
+- car:  450 (rất phổ biến)
+- can:  320 (khá phổ biến)
+- call: 150 (ít phổ biến)
+- case:  80 (rất ít)
+
+Sau Heap Sort (top-3):
+1. car  (450)
+2. can  (320)
+3. cat  (100)
+```
 
 ### Ưu điểm và hạn chế
 
@@ -414,7 +443,7 @@ policy:
 
 Ta tính **độ phù hợp với context** của một từ bằng một hàm Heuristic ($\alpha$ là hyperparameters):
 
-$$\text{score}(\text{word.freq, word.topic, context.topic}) = \frac{\log(\text{word.freq})}{\log(\text{maxˍfreq})} \cdot \left(1+\alpha\cdot\text{cosineˍsim}(\text{word.topic}, \text{context.topic})^2\right)$$
+$$\text{score}(w) = \frac{\log(\text{freq}(w) + 1)}{\log(\text{maxˍfreq} + 1)} \times \left(1 + \alpha \cdot \text{cosineˍsim}(\text{topic}(w), \text{topic}(\text{context}))^2\right)$$
 
 **Ý nghĩa**: Từ nào có score cao hơn thì sẽ được ưu tiên gợi ý.
 
@@ -430,6 +459,65 @@ Ví dụ Autocomplete hiển thị:
 | polynomial | 0.55 |
 | point | 0.32 |
 | policy | 0.05 |
+
+---
+
+### 4.7. Phân tích độ phức tạp thời gian (Online)
+
+#### Tổng quan quy trình
+
+Quy trình gợi ý online gồm các bước chính:
+
+1. **Tokenize & tiền xử lý context**
+2. **Suy diễn topic distribution của context (Linearized LDA)**
+3. **Tìm từ khớp prefix trong Trie**
+4. **Tính điểm cho mỗi từ**
+5. **Lấy top-K kết quả**
+
+#### Phân tích từng bước
+
+| Bước | Độ phức tạp | Mô tả |
+| --- | --- | --- |
+| **1. Tokenize & xử lý context** | $O(C)$ | $C$ = độ dài context (ký tự) |
+| **2. POS tagging & Lemmatization** | $O(n)$ hoặc $O(n \log V)$ | $n$ = số token ~ $C/5$; $V$ = vocabulary size |
+| **3. Lấy topic distribution** | $O(n \cdot K)$ | $n$ = số token; $K$ = số topics (~15-30) |
+| **4. Normalize topic vector** | $O(K)$ | Chia vector cho tổng |
+| **5. Tìm nhánh prefix trong Trie** | $O(L)$ | $L$ = độ dài prefix (~3-5 ký tự) |
+| **6. Duyệt toàn bộ từ khớp** | $O(M)$ | $M$ = số ký tự trong nhánh (khác L) |
+| **7. Heap sort top-K** | $O(N_m \log K)$ | $N_m$ = số từ khớp prefix (~10-100) |
+| **8. Tính điểm (scoring)** | $O(N_m \cdot K)$ | Cosine similarity cho mỗi từ |
+| **9. Lấy top-K cuối cùng** | $O(N_m \log K)$ | QuickSelect hoặc HeapSort |
+
+#### Độ phức tạp tổng thể
+
+$$T(n) = O(C + n \cdot K + L + N_m \cdot K + N_m \log K)$$
+
+**Đơn giản hóa** (bước LDA và scoring chiếm thời gian chủ yếu):
+
+$$T(n) \approx O(n \cdot K + N_m \cdot K)$$
+
+#### Phân tích trường hợp thực tế
+
+Với các giá trị điển hình cho hệ thống:
+
+- $C$ ~100-500 ký tự (context)
+- $n$ ~10-30 token (sau tokenize, loại bỏ stopword)
+- $K$ ~15-30 topics (từ LDA)
+- $L$ ~3-5 ký tự (prefix)
+- $N_m$ ~10-100 từ khớp (phụ thuộc prefix)
+
+| Trường hợp | $n$ | $N_m$ | $K$ | Thời gian (ms) | Ghi chú |
+| --- | --- | --- | --- | --- | --- |
+| **Tốt nhất** | 10 | 10 | 15 | ~2-3 | Prefix đặc thù, context ngắn |
+| **Trung bình** | 20 | 50 | 20 | ~10-15 | Prefix phổ biến, context trung bình |
+| **Xấu nhất** | 30 | 100 | 30 | ~30-50 | Prefix chung (ví dụ "a"), context dài |
+
+#### Kết luận
+
+**Độ phức tạp chủ yếu:** $O((n + N_m) \cdot K)$
+
+- Thường dưới 50ms (phù hợp realtime)
+- Bottleneck chính: Tính điểm ($scoring step$) với $O(N_m \cdot K)$
 
 ---
 
@@ -511,19 +599,18 @@ Trong quá trình này:
 
 Sau khi suy diễn:
 
-- Tính chỉ số **Topic Coherence** $C_v$
-  (đánh giá mức độ các từ trong cùng một topic xuất hiện cùng nhau)
+> Đánh giá các cấu hình thông qua cảm nhận chủ quan của con người. Phương pháp này được lựa chọn thay vì dùng một chỉ số đánh giá (ví dụ như Coherence) là vì hiện vẫn còn nhiều tranh cãi về tính đúng đắn của những chỉ số này vì chúng đôi khi đưa ra kết quả không tương đồng so với chất lượng của topic model.
 
-Các chỉ số này phản ánh khả năng mô hình giải thích dữ liệu mới.
+→ So sánh các cấu hình để chọn mô hình tốt nhất.
 
-→ So sánh các cấu hình và chọn mô hình tốt nhất.
+Tiếp tục dùng cấu hình tốt nhất này để tìm một hàm Heristic (kết hợp Trie và LDA) cho ra điểm số cao nhất khi tính điểm **Hit@K** (tỷ lệ truy vấn có kết quả đúng nằm trong top K) trên tập Validation.
 
 ### 2.5. Đánh giá tổng quát
 
 Sử dụng **18,000 tài liệu kiểm thử** (hoàn toàn độc lập):
 
 - So sánh:
-  - Mô hình kết hợp **Trie Freq + LDA** (cấu hình tốt nhất)
+  - Mô hình kết hợp **Trie Freq + LDA** (cấu hình tốt nhất + Hàm Heuristic đã tìm được)
   - Mô hình dùng **Trie Freq**
   - Mô hình chỉ dùng **Trie**
 
@@ -543,9 +630,127 @@ Cách chia này giúp:
 
 ## 1. Phân tích tập huấn luyện cho LDA
 
+Tập huấn luyện cho LDA bao gồm:
+- Trước khi tiền xử lý:
+  - Số tài liệu: 53 928
+  - Tổng lượng token: 34 707 979
+  - Kích thước tập từ vựng: 189 878
+  - Trung bình độ dài tài liệu: 643.60
+  - Độ lệch chuẩn độ dài tài liệu: 337.28
+- Sau khi tiền xử lý:
+  - Số tài liệu: 53 926
+  - Tổng lượng token: 13 435 668
+  - Kích thước tập từ vựng: 25 185
+  - Trung bình độ dài tài liệu: 249.15
+  - Độ lệch chuẩn độ dài tài liệu: 131.98
+
+**Bảng phân tích**
+
+<figure align="center">
+  <img src="https://github.com/Quan064/Word_AutoComlete/blob/main/images/Histogram%20of%20Document%20Lengths.png?raw=true" alt="Not found">
+  <figcaption>Phổ độ dài tài liệu tập huấn luyện của LDA sau khi tiền xử lý</figcaption>
+</figure>
+
+<figure align="center">
+  <img src="https://github.com/Quan064/Word_AutoComlete/blob/main/images/Vocabulary%20Size.png?raw=true" alt="Not found">
+  <figcaption>Kích thước tập từ vựng trước và sau khi tiền xử lý</figcaption>
+</figure>
+
+<figure align="center">
+  <img src="https://github.com/Quan064/Word_AutoComlete/blob/main/images/Total%20Tokens.png?raw=true" alt="Not found">
+  <figcaption>Tổng lượng token trước và sau khi tiền xử lý</figcaption>
+</figure>
+
+**Nhận xét**
+
+Hiệu quả tiền xử lý rất tốt:
+- Vocabulary giảm từ 189,878 → 25,185 (cắt giảm ~87%)
+- Tổng tokens giảm từ 34.7M → 13.4M (cắt giảm ~61%)
+- Chỉ loại bỏ noise, mà còn giữ lại được phần lớn tài liệu (53,928 → 53,926): gần như không mất dữ liệu
+
+→ Tập huấn luyện được tiền xử lý rất kỹ, lượng dữ liệu đủ, phân bố hợp lý → điều kiện tốt để huấn luyện LDA với kết quả chất lượng cao
+
 ## 2. Lựa chọn siêu tham số và hàm Heuristic
 
+### 2.1. Chọn số lượng chủ đề (K) cho LDA
+
+#### Thử nghiệm với các giá trị K khác nhau
+
+Chúng tôi thử nghiệm với các mô hình LDA sử dụng các giá trị K (số lượng chủ đề) khác nhau: $K ∈ \set{5, 10, 15, 20, 25, 30, ..., 400}$
+
+#### Phương thức đánh giá
+
+1. **Định tính dựa trên cảm nhận của con người**
+  Cảm thấy K nào có sự phân bổ chủ đề hợp lý hơn thì chọn K đó.
+
+2. **Topic Coherence** ($C_v$) (đánh giá mức độ các từ trong cùng một topic xuất hiện cùng nhau)\
+Mặc dù trước đó đã nói rằng phương thức này không đảm bảo tính đúng đắn nhưng chúng tôi vẫn sẽ chọn một K bằng phương thức này phòng trường hợp này phòng trường hợp nó có thể ra kết quả Hit tốt hơn cho hàm Heuristic.
+
+#### Kết quả
+
+1. **Định tính dựa trên cảm nhận của con người**
+
+2. **Topic Coherence** ($C_v$)
+
+### 2.2. Chọn hàm Heuristic để kết hợp Trie và LDA
+
+#### Hàm Heuristic tìm được
+
+$$\text{score}(w) = \frac{\log(\text{freq}(w) + 1)}{\log(\text{maxˍfreq} + 1)} \times \left(1 + \alpha \cdot \text{cosineˍsim}(\text{topic}(w), \text{topic}(\text{context}))^2\right)$$
+
+Trong đó:
+- $w$ : từ được gợi ý
+- $\text{freq}(w)$ : tần suất từ $w$ trong tập huấn luyện
+- $\text{maxˍfreq}$ : tần suất cao nhất trong vocabulary
+- $\text{topic}(w)$ : phân bố chủ đề của từ $w$ (vector K chiều)
+- $\text{topic}(\text{context})$ : phân bố chủ đề của ngữ cảnh hiện tại
+- $\alpha$ : hyperparameter điều chỉnh trọng số của "topic relevance" (thường $\alpha \in [0.5, 2.0]$)
+
+#### Phân tích từng thành phần
+
+**1. Phần tần suất: $\frac{\log(\text{freq}(w) + 1)}{\log(\text{maxˍfreq} + 1)}$**
+
+| Đặc tính | Giải thích |
+| --- | --- |
+| **Tại sao logarit?** | Tần suất thô có dạng power-law (một vài từ rất phổ biến) → log giúp chuẩn hóa |
+| **Tại sao +1?** | Tránh $\log(0)$ khi freq=0 |
+| **Phạm vi giá trị** | $[0, 1]$ → dễ kết hợp với phần khác |
+| **Ý nghĩa** | Tránh từ rất phổ biến làm lấn át những từ có ý nghĩa topic khác |
+
+**2. Phần chủ đề: $1 + \alpha \cdot \text{cosineˍsim}(...)^2$**
+
+| Đặc tính | Giải thích |
+| --- | --- |
+| **Cosine similarity** | Đo góc giữa hai vector topic → [0, 1] |
+| **Bình phương (^2)** | Khuếch đại sự khác biệt (amplify difference) → topic relevance rõ ràng hơn |
+| **$1 +$ phía trước** | Đảm bảo từ hoàn toàn không liên quan (sim=0) vẫn có score > 0 |
+| **Hyperparameter $\alpha$** | Điều chỉnh mức độ "topic sensitivity" |
+
+#### Tại sao nhân hai phần lại với nhau?
+
+$$\text{score}(w) = \underbrace{\frac{\log(\text{freq})}{\log(\text{maxˍfreq})}}_\text{phần A: popularity} \times \underbrace{(1 + \alpha \cdot \text{sim}^2)}_\text{phần B: relevance}$$
+
+**Ý tưởng:**
+- Từ phủ hợp ngữ cảnh nhưng hiếm → score vừa phải
+- Từ phổ biến nhưng không phù hợp → score thấp
+- Từ vừa phổ biến vừa phù hợp → score cao
+
+#### Lưu ý
+
+Việc thử nghiệm hàm Heuristic và hyperparameter α được thực hiện trên tập Validation.
+
+### 2.3 Kết luận
+
+- K tốt nhất: 20
+- Alpha tốt nhất theo với độ dài prefix từ 1 đến 6: [0.1, 0.5, 1.0, 1.5, 2.0, 2.5]
+
 ## 3. Kết quả đánh giá tổng thể
+
+### Nhận xét
+
+Bảng so sánh mô hình cho thấy kêt quả của Trie + LDA không có tính vượt trội rõ ràng so với Trie Freq. Mặt khác, nếu tập test có độ loãng chủ đề của ngữ cảnh lớn hơn, điểm của Trie + LDA và Trie Freq khả năng cao là sẽ hoàn toàn trùng khớp.
+
+Dưới đây là một số nguyên nhân mà chúng tôi nghi ngờ là đang gây ra tình trạng này:
 
 
 # V. Ứng dụng

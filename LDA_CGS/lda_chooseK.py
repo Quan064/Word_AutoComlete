@@ -1,6 +1,7 @@
 import pickle
 import tomotopy as tp
 import matplotlib.pyplot as plt
+from wordcloud import WordCloud
 from gensim.models.coherencemodel import CoherenceModel
 from gensim.corpora import Dictionary
 
@@ -9,6 +10,36 @@ def load_data(address):
     with open(address, 'rb') as f:
         tokenized_articles = pickle.load(f)
     return tokenized_articles
+
+
+def render_word_cloud(model, rows, cols, max_words=100):
+    """
+    Visualize LDA topics using word clouds.
+    
+    Args:
+        model: tomotopy LDA model
+        rows: number of rows in subplot grid
+        cols: number of columns in subplot grid
+        max_words: maximum number of words to display in each word cloud
+    """
+    word_cloud = WordCloud(background_color='white', max_words=max_words, prefer_horizontal=1.0)
+    fig, axes = plt.subplots(rows, cols, figsize=(15, 15))
+    
+    for i, ax in enumerate(axes.flatten()):
+        if i >= model.k:  # Stop if we run out of topics
+            break
+        
+        # Get topic words for tomotopy model
+        topic_words = dict(model.get_topic_words(i, top_n=max_words))
+        
+        if topic_words:  # Only generate if there are words
+            word_cloud.generate_from_frequencies(topic_words)
+            ax.imshow(word_cloud, interpolation='bilinear')
+            ax.set_title(f'Topic {i}')
+            ax.axis('off')
+    
+    plt.tight_layout()
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -59,6 +90,10 @@ if __name__ == "__main__":
 
     print("Final alpha:", model.alpha)
     print("Coherence:", coherence)
+
+    # Visualize topics using word clouds
+    # Adjust rows and cols based on your K value (K=20, so 4x5 grid)
+    render_word_cloud(model, rows=4, cols=5, max_words=50)
 
     # Coherence:  0.5388787444118792
     # Final alpha: [0.06291872 0.09931275 0.03810117 0.10546406 0.08161369 0.11097357
