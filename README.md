@@ -1,4 +1,3 @@
-﻿# Word_AutoComplete
 # TOPIC-AWARE AUTOCOMPLETE
 
 # I. Introduction
@@ -408,16 +407,7 @@ prefix  = "po"
 
 We estimate the topic distribution of the context by averaging the topic distributions of the tokens (Linearized LDA):
 
-$$
-\begin{bmatrix} 0.45 \ 0.02 \end{bmatrix}
-+
-\begin{bmatrix} 0.45 \ 0.03 \end{bmatrix}
-=========================================
-
-\begin{bmatrix} 0.90 \ 0.05 \end{bmatrix}
-\xrightarrow{\text{Normalize}}
-\begin{bmatrix} 0.947 \ 0.053 \end{bmatrix}
-$$
+$$\begin{bmatrix} 0.45 \\ 0.02 \end{bmatrix} + \begin{bmatrix} 0.45 \\ 0.03 \end{bmatrix} = \begin{bmatrix} 0.90 \\ 0.05 \end{bmatrix} \xrightarrow{Normalize} \begin{bmatrix} 0.947 \\ 0.053 \end{bmatrix}$$
 
 Resulting context distribution:
 
@@ -473,16 +463,7 @@ policy:
 
 We compute the **relevance to the context** of a word using a heuristic function ($\alpha$ is a hyperparameter):
 
-$$
-\text{score}(w)
-===============
-
-\frac{\log(\text{freq}(w) + 1)}{\log(\text{max_freq} + 1)}
-\times
-\left(
-1 + \alpha \cdot \text{cosine_sim}(\text{topic}(w), \text{topic}(\text{context}))^2
-\right)
-$$
+$$\text{score}(w) = \frac{\log(\text{freq}(w) + 1)}{\log(\text{maxˍfreq} + 1)} \times \left(1 + \alpha \cdot \text{cosineˍsim}(\text{topic}(w), \text{topic}(\text{context}))^2\right)$$
 
 **Interpretation**: Words with higher scores are prioritized in the suggestions.
 
