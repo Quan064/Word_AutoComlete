@@ -865,7 +865,7 @@ Although the results between Trie with Frequency and Trie with Frequency and LDA
 
 * Writing teamwork's rules.
 
-* Implementing the trie, the model.
+* Implementing the trie, the model, and the Hit@K comparison between the three methods.
 
 * Writing the readme report.
 
@@ -905,6 +905,10 @@ Although the results between Trie with Frequency and Trie with Frequency and LDA
 
 * Creating videos.
 
-*Talking about the project in the videos.
+* Talking about the project in the videos.
 
-*Project Dataset: 
+**Project Dataset:** https://drive.google.com/uc?id=122fC9XpNwFKx0ryRVKJz5MWUTzA3Vpsf
+
+**Pre-trained Model and Preprocessed Data Files:** https://drive.google.com/drive/u/0/folders/1k8AGubRUxwlyBdpuE8EkjSPf8MJQm-Kv
+
+
