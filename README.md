@@ -857,53 +857,53 @@ Although the results between Trie with Frequency and Trie with Frequency and LDA
 
 **Thong Minh Quan, Leader:** 
 
-*Suggesting the project, the trie, and LDA model.
+* Suggesting the project, the trie, and LDA model.
 
-*Assigning jobs to every team members.
+* Assigning jobs to every team members.
 
-*Supervising other members' jobs.
+* Supervising other members' jobs.
 
-*Writing teamwork's rules.
+* Writing teamwork's rules.
 
-*Implementing the trie, the model.
+* Implementing the trie, the model.
 
-*Writing the readme report.
+* Writing the readme report.
 
-*Creating videos.
+* Creating videos.
 
-*Talking about the project in the videos.
+* Talking about the project in the videos.
 
 **Hoang Nguyen The Hien, Team Member:**
 
-*Suggesting Streamlit to build the application.
+* Suggesting Streamlit to build the application.
 
-*Finding information about the evaluation method.
+* Finding information about the evaluation method.
 
-*Supervising other members' jobs.
+* Supervising other members' jobs.
 
-*Doing the data-preprocessing task.
+* Doing the data-preprocessing task.
 
-*Implementing and improving the trie, the LDA model, and the Hit@K comparison between the three methods.
+* Implementing and improving the trie, the LDA model, and the Hit@K comparison between the three methods.
 
-*Implementing the Streamlit application.
+* Implementing the Streamlit application.
 
-*Writing the readme report.
+* Writing the readme report.
 
-*Talking about the project in the videos.
+* Talking about the project in the videos.
 
 **Vo Le Nam Khanh Ann, Team Member:**
 
-*Suggesting evaluation method.
+* Suggesting evaluation method.
 
-*Finding information about the evaluation method.
+* Finding information about the evaluation method.
 
-*Supervising other members' jobs.
+* Supervising other members' jobs.
 
-*Doing the data-preprocessing task.
+* Doing the data-preprocessing task.
 
-*Writing the readme report.
+* Writing the readme report.
 
-*Creating videos.
+* Creating videos.
 
 *Talking about the project in the videos.
 
