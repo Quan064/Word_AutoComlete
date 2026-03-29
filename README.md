@@ -1,82 +1,86 @@
-﻿# TOPIC-AWARE AUTOCOMPLETE
+﻿# Word_AutoComplete
+# TOPIC-AWARE AUTOCOMPLETE
 
-# I. Giới thiệu
+# I. Introduction
 
-### Bối cảnh và mục đích bài toán
+### Problem Background and Objective
 
-Trong các hệ thống soạn thảo văn bản hiện đại, chức năng tự động gợi ý từ (autocomplete) đóng vai trò quan trọng trong việc:
+In modern text editing systems, the autocomplete feature plays a crucial role in:
 
-- Tăng tốc độ nhập liệu
-- Giảm lỗi chính tả
-- Hỗ trợ người dùng diễn đạt ý tưởng hiệu quả hơn
+* Increasing typing speed
+* Reducing spelling errors
+* Helping users express ideas more effectively
 
-Tuy nhiên, các phương pháp autocomplete truyền thống thường chỉ dựa trên:
+However, traditional autocomplete methods are typically based only on:
 
-- Tiền tố (prefix)
-- Tần suất xuất hiện của từ
+* Prefix matching
+* Word frequency
 
-Do đó, chúng gặp hạn chế lớn:
+As a result, they suffer from significant limitations:
 
-- Không hiểu ngữ cảnh của câu đang viết
-- Không phân biệt được các từ cùng tiền tố nhưng khác nghĩa
+* They do not understand the context of the sentence being written
+* They cannot distinguish between words that share the same prefix but have different meanings
 
 
-### Vấn đề đặt ra
 
-Xét ví dụ:
+### Problem Statement
+
+Consider the following example:
 
 ```
 machine learning is used for image p...
 
-Một hệ thống truyền thống có thể gợi ý:
+A traditional system might suggest:
 - people
 - police
 - party
 
-Trong khi từ đúng theo ngữ cảnh là:
+While the contextually correct words are:
 - processing
 - prediction
 ```
 
-Điều này cho thấy cần một hệ thống có khả năng:
+This illustrates the need for a system that can:
 
-- hiểu ngữ cảnh ngữ nghĩa (semantic context)
-- kết hợp với tìm kiếm nhanh theo tiền tố
-
-
-### Mục tiêu của đề tài
-
-Đề tài hướng đến việc xây dựng một hệ thống autocomplete cho văn bản tiếng Anh có khả năng:
-
-- Gợi ý từ dựa trên tiền tố người dùng nhập
-- Đồng thời phù hợp với chủ đề của văn bản
-
-Thông qua việc kết hợp:
-
-- **Trie** → Tìm kiếm nhanh theo tiền tố
-- **LDA & CGS** → Mô hình hóa chủ đề của văn bản
-
-Các thuật toán này được chọn vì chúng có độ phức tạp thời gian nhỏ, đơn giản và dễ triển khai.
+* understand semantic context
+* combine it with fast prefix-based search
 
 
-# II. Tìm hiểu thuật toán
 
-## 1. Cấu trúc dữ liệu Trie
+### Objectives of the Study
 
-### Khái niệm
+This project aims to develop an autocomplete system for English text that is capable of:
 
-**Trie** (Prefix Tree) là một cấu trúc dữ liệu dạng cây được sử dụng để lưu trữ và truy vấn tập hợp các chuỗi. Mỗi nút trong Trie đại diện cho một ký tự.
+* Suggesting words based on the prefix entered by the user
+* Ensuring that the suggestions are consistent with the topic of the text
+
+This is achieved by combining:
+
+* **Trie** → Fast prefix-based search
+* **LDA & CGS** → Topic modeling for the text
+
+These algorithms are selected due to their low time complexity, simplicity, and ease of implementation.
 
 
-### Cách cài đặt
 
-Ví dụ với các từ:
+# II. Algorithm Overview
+
+## 1. Trie Data Structure
+
+### Definition
+
+A **Trie** (Prefix Tree) is a tree-based data structure used to store and query a collection of strings. Each node in a Trie represents a character.
+
+### Implementation
+
+For example, with the following words:
 
 ```
 cat, car, dog
 ```
 
-Trie sẽ có dạng:
+The Trie would have the following structure:
+
 
 ```
 (root)
@@ -90,37 +94,38 @@ Trie sẽ có dạng:
 ```
 
 
-### Tìm kiếm theo tiền tố
+### Prefix Search
 
-Khi người dùng nhập: `ca`
+When the user enters: `ca`
 
-Trie sẽ:
+The Trie will:
 
-- Đi theo nhánh `c` → `a`
-- Duyệt toàn bộ các từ phía dưới
+* Traverse along the branch `c` → `a`
+* Explore all words in the subtree below
 
-→ trả về:
+→ return:
 
-```
+```"
 cat, car
 ```
 
 
-### Sắp xếp kết quả theo tần suất (Heap Sort)
+### Ranking Results by Frequency (Heap Sort)
 
-#### Vấn đề
+#### Problem
 
-Trie chỉ trả về danh sách các từ khớp với prefix, nhưng **không sắp xếp theo mức độ phổ biến**. Người dùng thường mong muốn những từ **dùng thường xuyên nhất** được gợi ý trước.
+A Trie only returns a list of words that match the given prefix, but it **does not rank them by popularity**. In practice, users expect the **most frequently used words** to appear first in the suggestions.
 
-#### Giải pháp: Heap Sort by Frequency
+#### Solution: Heap Sort by Frequency
 
-**Ý tưởng:**
+**Idea:**
 
-- Mỗi nút từ trong Trie lưu trữ thêm **tần suất xuất hiện** của từ đó
-- Khi tìm kiếm, sau khi duyệt nhánh trie, sử dụng **Heap (Min-Heap)** để sắp xếp các từ theo tần suất giảm dần
-- Trả về top-K kết quả có tần suất cao nhất
+* Each word node in the Trie additionally stores its **frequency of occurrence**
+* During search, after traversing the Trie branch, use a **Heap (Min-Heap)** to rank words by descending frequency
+* Return the top-K results with the highest frequency
 
-#### Cấu trúc dữ liệu nút Trie
+
+#### Data Structure of the  Trie node
 
 ```
 Node {
@@ -131,219 +136,230 @@ Node {
 }
 ```
 
-#### Ví dụ
+#### Example
 
-Với từ khóa `ca`:
+For the keyword `ca`:
 
 ```
-Trie trả về: cat, car, can, call, case
+Trie returns: cat, car, can, call, case
 
-Tần suất:
-- cat:  100 (phổ biến)
-- car:  450 (rất phổ biến)
-- can:  320 (khá phổ biến)
-- call: 150 (ít phổ biến)
-- case:  80 (rất ít)
+Frequencies:
+- cat:  100 (common)
+- car:  450 (very common)
+- can:  320 (fairly common)
+- call: 150 (less common)
+- case:  80 (rare)
 
-Sau Heap Sort (top-3):
+After Heap Sort (top-3):
 1. car  (450)
 2. can  (320)
 3. cat  (100)
 ```
 
-### Ưu điểm và hạn chế
+### Advantages and Limitations
 
-- Ưu điểm:
+* Advantages:
 
-    - Tìm kiếm nhanh theo prefix
-    - Phù hợp autocomplete
+  * Fast prefix-based search
+  * Well-suited for autocomplete
 
-- Hạn chế:
+* Limitations:
 
-    - Không hiểu nghĩa của từ được gợi ý
-    - Không xét ngữ cảnh
-
-
-## 2. Mô hình LDA (Latent Dirichlet Allocation)
-
-### Ý tưởng chính
-
-LDA là một mô hình xác suất dùng để khám phá các “chủ đề ẩn” trong tập văn bản.
+  * Does not understand the meaning of suggested words
+  * Does not consider context
 
 
-### Giả định của LDA
 
-LDA giả định:
+## 2. LDA Model (Latent Dirichlet Allocation)
 
-- Mỗi tài liệu là sự kết hợp của nhiều chủ đề
-- Mỗi chủ đề là một phân bố xác suất trên các từ
+### Main Idea
 
+LDA is a probabilistic model used to discover “hidden topics” within a collection of documents.
 
-### Ví dụ trực quan
+### Assumptions of LDA
 
-Một document có thể bao gồm:
+LDA assumes that:
 
-- `technology` : 70%
-- `education` : 30%
-
-Topic `technology` có thể gồm:
-
-- `code`, `AI`, `data`, `algorithm`, $\dots$
+* Each document is a mixture of multiple topics
+* Each topic is a probability distribution over words
 
 
-### Biểu diễn xác suất
 
-Từ các giả định này, LDA lập ra hai phân phối xác suất:
+### Intuitive Example
 
-1. Phân bố từ theo chủ đề: $P(\text{word} \mid \text{topic})$
+A document may consist of:
 
-2. Phân bố chủ đề theo tài liệu: $P(\text{topic} \mid \text{document})$
+* `technology` : 70%
+* `education` : 30%
 
+The `technology` topic may include:
 
-### Ứng dụng trong bài toán
+* `code`, `AI`, `data`, `algorithm`, $\dots$
 
-Trong hệ thống autocomplete:
+### Probabilistic Representation
 
-- Phần văn bản đã nhập (context) → xem như một “document”
-- LDA sử dụng một thuật toán là **CGS** để suy diễn $P(\text{topic} | \text{context})$, nhờ đó xác định được ngữ cảnh hiện tại
+Based on these assumptions, LDA defines two probability distributions:
 
+1. Word distribution given a topic: $P(\text{word} \mid \text{topic})$
 
-## 3. Thuật toán CGS (Collapsed Gibbs Sampling)
-
-### Ý tưởng
-
-CGS là phương pháp suy diễn trong LDA dựa trên phương pháp lấy mẫu tuần tự, cập nhật nhãn chủ đề cho từng từ trong tài liệu tùy theo số lượng chủ đề được yêu cầu.
-
-CGS có 2 giả định:
-
- - Một tài liệu thường có một chủ đề độc tôn
- - Một từ thường có một nghĩa độc tôn
+2. Topic distribution given a document: $P(\text{topic} \mid \text{document})$
 
 
-### Quá trình hoạt động của CGS
 
-Cho CSG một tập tài liệu, số lượng chủ đề cần lọc $(K)$, $\alpha$ và $\beta$ (đôi lúc bị thay bằng $\eta$).
+### Application in the Problem
 
-1. Ngẫu nhiên gán một chủ đề cho từng từ trong mọi tài liệu.
-(Những từ giống nhau có thể có chủ đề khác nhau)
+In the autocomplete system:
 
-Xét một tài liệu $d$ cụ thể:
+* The previously typed text (context) is treated as a “document”
+* LDA uses an algorithm called **CGS** to infer $P(\text{topic} \mid \text{context})$, thereby identifying the current semantic context
 
-1. Đếm số lần mỗi chủ đề $k$ xuất hiện trong tài liệu $d$.
-2. Đếm số lần mỗi từ xuất hiện trong từng chủ đề trên toàn tập dữ liệu.
-3. Trong tài liệu $d$, bỏ gán một từ $w_{d,n}$ khỏi chủ đề của nó.
-4. Gán một chủ đề mới cho $w_{d,n}$ dựa trên:
-  - Tài liệu $d$ thường nói về chủ đề nào (lấy từ bước 2).
-  - Tần xuất  $w_{d,n}$ xuất hiện trong từng chủ đề (lấy từ bước 3).
-  
-  Công thức:
-  
-  $$
-  \frac{n_{d,k}+\alpha}{\sum^K_in_{d,i}+\alpha K}\times\frac{m_{w,k}+\beta}{\sum^V_im_{i,k}+\beta V}
-  $$
-  
-  Trong đó:
-  
-  - $n_{d,k}$ : Số từ thuộc chủ đề $k$ xuất hiện trong tài liệu $d$
-  - $\sum^K_in_{d,i}$ : Số từ trong tài liệu $d$
-  - $m_{w,k}$ : Số lần $w_{d,n}$ xuất hiện trong chủ đề $k$
-  - $\sum^V_im_{i,k}$ : Số lượng từ vựng không lặp lại trong chủ đề $k$
-  - $\alpha \in [0, 1]$ : Mức độ phân tán chủ đề trung bình của toàn bộ tài liệu 
-  - $\beta \in [0, 1]$ : Mức độ phân tán nghĩa trung bình của toàn bộ từ
-  
-  Kết quả của công thức là tỷ lệ gán nhãn $k$ cho $w_{d,n}$ (gán ngẫu nhiên có tỷ lệ).
+## 3. CGS Algorithm (Collapsed Gibbs Sampling)
 
-↻ Lặp lại bước 2-5 cho đến khi nào thấy đủ thì dừng lại.
+### Idea
+
+CGS is an inference method in LDA based on sequential sampling, where topic assignments for each word in a document are iteratively updated according to the number of topics.
+
+CGS is based on two assumptions:
+
+* A document typically has a dominant topic
+* A word typically has a dominant meaning
 
 
-### Kết quả
 
-Sau nhiều lần lặp, CGS thu được:
-- Phân phối từ trong topic - $\phi$, với $\phi_{k,w}​=P(\text{word}=w \mid \text{topic}=k)$
-- Phân phối topic trong document - $\theta$, với $\theta_{d,k}​=P(\text{topic}=k \mid \text{document}=d)$
+### CGS Procedure
+
+Given a corpus of documents, the number of topics $(K)$, and hyperparameters $\alpha$ and $\beta$ (sometimes denoted as $\eta$):
+
+1. Randomly assign a topic to each word in all documents.
+   (Identical words may be assigned different topics)
+
+Consider a specific document $d$:
+
+2. Count how many times each topic $k$ appears in document $d$.
+3. Count how many times each word appears in each topic across the entire dataset.
+4. In document $d$, remove the current topic assignment of a word $w_{d,n}$.
+5. Assign a new topic to $w_{d,n}$ based on:
+
+   * Which topics are prevalent in document $d$ (from step 2)
+   * The frequency of $w_{d,n}$ in each topic (from step 3)
+
+   Formula:
+
+   $$
+   \frac{n_{d,k}+\alpha}{\sum^K_i n_{d,i}+\alpha K}
+   \times
+   \frac{m_{w,k}+\beta}{\sum^V_i m_{i,k}+\beta V}
+   $$
+
+   Where:
+
+   * $n_{d,k}$: Number of words assigned to topic $k$ in document $d$
+   * $\sum^K_i n_{d,i}$: Total number of words in document $d$
+   * $m_{w,k}$: Number of times $w_{d,n}$ appears in topic $k$
+   * $\sum^V_i m_{i,k}$: Total number of word occurrences in topic $k$
+   * $\alpha \in [0, 1]$: Controls topic distribution across documents
+   * $\beta \in [0, 1]$: Controls word distribution within topics
+
+   The result of this formula is the probability of assigning topic $k$ to $w_{d,n}$ (sampling proportionally).
+
+↻ Repeat steps 2–5 until convergence or a stopping condition is met.
 
 
-### Ưu điểm và hạn chế
 
-#### Ưu điểm
+### Results
 
-- Đơn giản, dễ triển khai
-- Dễ giải thích cách hoạt động: hiểu được cách một chủ đề được gán cho một từ
+After many iterations, CGS yields:
 
-#### Hạn chế
+* Word distribution over topics — $\phi$, where $\phi_{k,w} = P(\text{word} = w \mid \text{topic} = k)$
+* Topic distribution over documents — $\theta$, where $\theta_{d,k} = P(\text{topic} = k \mid \text{document} = d)$
 
-- Chậm do cần nhiều vòng lặp (không phù hợp trực tiếp cho realtime nếu không tối ưu)
-- Chỉ coi văn bản là túi từ nên không hiểu được quan hệ vị trí giữa các từ với nhau.
+### Advantages and Limitations
+
+#### Advantages
+
+* Simple and easy to implement
+* Interpretable: it is possible to understand how a topic is assigned to a word
+
+#### Limitations
+
+* Computationally slow due to many iterations (not directly suitable for real-time use without optimization)
+* Treats text as a bag of words, thus ignoring positional relationships between words
 
 
-## 4. Kết hợp Trie và LDA
 
-### 4.1. Chuẩn bị dữ liệu (Offline)
+## 4. Combining Trie and LDA
 
-#### Bước 1 - Thu thập và tiền xử lý văn bản
+### 4.1. Data Preparation (Offline)
 
-- **LDA**
-  - **Lowercase**: viết thường toàn bộ văn bản
-  - **Tokenization**: chuyển đổi chuỗi văn bản thành các đơn vị rời rạc (thường là từ) gọi là token.
-  - **Non-alphabetic tokens filtering**: lọc những token không phải chữ cái
-  - **Punctuation removal**: loại bỏ dấu câu
-  - **Space removal**: loại bỏ khoảng trắng
-  - **Stopword removal**: loại bỏ từ dừng (những từ ít đóng góp nghĩa cho chủ đề văn bản)
-  - **POS filtering**: chỉ giữ lại những từ loại mang nhiều thông tin (danh từ, động từ, tính từ)
-  - **Extreme words filtering**: loại bỏ những từ hiếm xuất hiện hoặc quá phổ biến
-  - **Lemmatization**: đưa các dạng khác nhau của một từ về một dạng chuẩn duy nhất.
-- **Trie**
-  - **Tokenization**
-  - **Non-alphabetic tokens filtering**
-  - **Punctuation removal**
-  - **Space removal**
+#### Step 1 - Data Collection and Preprocessing
 
-Việc LDA có thêm Stopword removal, POS filtering, Extreme words filtering và Lemmatization giúp giảm bớt chi phí cho việc tính chủ đề của những từ tần xuất cao nhưng vô nghĩa, đôi khi còn gây nhiễu cho mô hình.
+* **LDA**
 
-#### Bước 2 - Huấn luyện LDA
+  * **Lowercase**: convert all text to lowercase
+  * **Tokenization**: transform text into discrete units (usually words) called tokens
+  * **Non-alphabetic tokens filtering**: remove tokens that are not alphabetic
+  * **Punctuation removal**: remove punctuation marks
+  * **Space removal**: remove extra whitespace
+  * **Stopword removal**: remove stopwords (words that contribute little semantic meaning)
+  * **POS filtering**: retain only informative parts of speech (nouns, verbs, adjectives)
+  * **Extreme words filtering**: remove very rare or overly frequent words
+  * **Lemmatization**: reduce different forms of a word to a single canonical form
 
-Dùng tập văn bản để huấn luyện LDA và thu được:
+* **Trie**
+
+  * **Tokenization**
+  * **Non-alphabetic tokens filtering**
+  * **Punctuation removal**
+  * **Space removal**
+
+The additional steps in LDA (Stopword removal, POS filtering, Extreme words filtering, and Lemmatization) help reduce computational cost by eliminating high-frequency but semantically insignificant words, which may otherwise introduce noise into the model.
+
+
+#### Step 2 - Training LDA
+
+Use the corpus to train the LDA model and obtain:
 
 1. **Topic → Word distribution**
 
-  $$
-  P(\text{word} | \text{topic})
-  $$
+$$
+P(\text{word} \mid \text{topic})
+$$
 
-  Ví dụ
+Example:
 
-  | Chủ đề | WordId_0: machine | WordId_1: learning | WordId_2: cat | WordId_3: fish |
-  | --- | --- | --- | --- | --- |
-  | Topic_1 (Technology) | 0.45 | 0.45 | 0.05 | 0.05 |
-  | Topic_2 (Animal) | 0.02 | 0.03 | 0.60 | 0.35 |
+| Topic                | WordId_0: machine | WordId_1: learning | WordId_2: cat | WordId_3: fish |
+| -------------------- | ----------------- | ------------------ | ------------- | -------------- |
+| Topic_1 (Technology) | 0.45              | 0.45               | 0.05          | 0.05           |
+| Topic_2 (Animal)     | 0.02              | 0.03               | 0.60          | 0.35           |
 
 2. **Word → Topic distribution**
 
-  $$
-  P(\text{topic} | \text{word})
-  $$
+$$
+P(\text{topic} \mid \text{word})
+$$
 
-  **Chuyển đổi**
+**Transformation**
 
-  | Từ | Phân phối chủ đề [Technology, Animal] |
-  | --- | :---: |
-  | WordId_0 (machine) | [0.45, 0.02] |
-  | WordId_1 (learning) | [0.45, 0.03] |
-  | WordId_2 (cat) | [0.05, 0.60] |
-  | WordId_3 (fish) | [0.05, 0.35] |
+| Word                | Topic Distribution [Technology, Animal] |
+| ------------------- | :-------------------------------------: |
+| WordId_0 (machine)  |               [0.45, 0.02]              |
+| WordId_1 (learning) |               [0.45, 0.03]              |
+| WordId_2 (cat)      |               [0.05, 0.60]              |
+| WordId_3 (fish)     |               [0.05, 0.35]              |
 
-  **Tác dụng**: xác định được tỷ lệ thuộc chủ đề bất kỳ của mỗi từ.
+**Purpose**: determine the proportion of each topic associated with a given word.
 
-#### Bước 3 - Xây dựng Trie
 
-Từ toàn bộ vocabulary, xây **Trie index**.
+#### Step 3 - Building the Trie
 
-Mỗi từ trong Trie lưu thêm:
+From the entire vocabulary, construct a **Trie index**.
 
-- frequency
-- topic distribution
+Each word in the Trie additionally stores:
 
-Ví dụ
+* frequency
+* topic distribution
+
+Example:
 
 ```
 machine
@@ -353,64 +369,77 @@ machine
   + Animal: 0.02
 ```
 
-**Tác dụng**
 
-Trie không chỉ lưu chữ mà còn lưu **thông tin chủ đề**.
+**Purpose**
+
+The Trie not only stores words but also retains **topic-related information**.
 
 ---
 
-### 4.2. Quy trình gợi ý khi người dùng đang nhập (Online)
+### 4.2. Suggestion Process During User Input (Online)
 
-Giả sử người dùng đang viết:
+Suppose the user is typing:
 
 ```
 machine learning is very po
 ```
 
-Ta tách thành hai phần.
+We split it into two parts:
 
 ```
 context = "machine learning is very"
 prefix  = "po"
 ```
 
+
 ---
 
-### 4.3. Phân tích ngữ cảnh bằng LDA
+### 4.3. Context Analysis with LDA
 
-#### Bước 1 — Tokenize phần nội dung đã viết (Stop Word Removal & POS Tagging & Lemmatization)
+#### Step 1 — Tokenize the Input Context (Stopword Removal, POS Tagging, and Lemmatization)
 
 (~~"is"~~, ~~"very"~~)
+
 ```
 ["machine", "learning"]
 ```
 
-#### Bước 2 — Suy diễn topic distribution
+#### Step 2 — Infer Topic Distribution
 
-Ta xác định được topic distribution của ngữ cảnh bằng trung bình cộng topic distribution của các token (Linearized LDA):
+We estimate the topic distribution of the context by averaging the topic distributions of the tokens (Linearized LDA):
 
-$$\begin{bmatrix} 0.45 \\ 0.02 \end{bmatrix} + \begin{bmatrix} 0.45 \\ 0.03 \end{bmatrix} = \begin{bmatrix} 0.90 \\ 0.05 \end{bmatrix} \xrightarrow{Normalize} \begin{bmatrix} 0.947 \\ 0.053 \end{bmatrix}$$
+$$
+\begin{bmatrix} 0.45 \ 0.02 \end{bmatrix}
++
+\begin{bmatrix} 0.45 \ 0.03 \end{bmatrix}
+=========================================
 
-Kết quả ngữ cảnh:
+\begin{bmatrix} 0.90 \ 0.05 \end{bmatrix}
+\xrightarrow{\text{Normalize}}
+\begin{bmatrix} 0.947 \ 0.053 \end{bmatrix}
+$$
+
+Resulting context distribution:
 
 ```
 Technology: 0.947
 Animal: 0.053
 ```
 
-Cách tính trung bình này nhanh hơn nhiều so với việc hội tụ CGS gốc nhưng đồng thời cũng đánh đổi độ chính xác.
+This averaging approach is significantly faster than running full CGS convergence, but it comes at the cost of reduced accuracy.
+
 
 ---
 
-### 4.4. Lấy candidate từ Trie
+### 4.4. Retrieving Candidate Words from Trie
 
-Tìm các từ bắt đầu bằng prefix.
+Find words that start with the given prefix.
 
 ```
 prefix = "po"
 ```
 
-Trie trả về:
+The Trie returns:
 
 ```
 power
@@ -420,11 +449,12 @@ politics
 polynomial
 ```
 
+
 ---
 
-### 4.5. Tính điểm gợi ý có điều kiện theo chủ đề
+### 4.5. Topic-Aware Suggestion Scoring
 
-Mỗi từ có phân bố topic:
+Each word has a topic distribution:
 
 ```
 power:
@@ -441,87 +471,104 @@ policy:
   + ...
 ```
 
-Ta tính **độ phù hợp với context** của một từ bằng một hàm Heuristic ($\alpha$ là hyperparameters):
+We compute the **relevance to the context** of a word using a heuristic function ($\alpha$ is a hyperparameter):
 
-$$\text{score}(w) = \frac{\log(\text{freq}(w) + 1)}{\log(\text{maxˍfreq} + 1)} \times \left(1 + \alpha \cdot \text{cosineˍsim}(\text{topic}(w), \text{topic}(\text{context}))^2\right)$$
+$$
+\text{score}(w)
+===============
 
-**Ý nghĩa**: Từ nào có score cao hơn thì sẽ được ưu tiên gợi ý.
+\frac{\log(\text{freq}(w) + 1)}{\log(\text{max_freq} + 1)}
+\times
+\left(
+1 + \alpha \cdot \text{cosine_sim}(\text{topic}(w), \text{topic}(\text{context}))^2
+\right)
+$$
 
----
+**Interpretation**: Words with higher scores are prioritized in the suggestions.
 
-### 4.6. Xếp hạng kết quả
-
-Ví dụ Autocomplete hiển thị:
-
-| word | score |
-| --- | --- |
-| power | 0.62 |
-| polynomial | 0.55 |
-| point | 0.32 |
-| policy | 0.05 |
 
 ---
 
-### 4.7. Phân tích độ phức tạp thời gian (Online)
+### 4.6. Ranking Results
 
-#### Tổng quan quy trình
+Example autocomplete output:
 
-Quy trình gợi ý online gồm các bước chính:
+| word       | score |
+| ---------- | ----- |
+| power      | 0.62  |
+| polynomial | 0.55  |
+| point      | 0.32  |
+| policy     | 0.05  |
 
-1. **Tokenize & tiền xử lý context**
-2. **Suy diễn topic distribution của context (Linearized LDA)**
-3. **Tìm từ khớp prefix trong Trie**
-4. **Tính điểm cho mỗi từ**
-5. **Lấy top-K kết quả**
-
-#### Phân tích từng bước
-
-| Bước | Độ phức tạp | Mô tả |
-| --- | --- | --- |
-| **1. Tokenize & xử lý context** | $O(C)$ | $C$ = độ dài context (ký tự) |
-| **2. POS tagging & Lemmatization** | $O(n)$ hoặc $O(n \log V)$ | $n$ = số token ~ $C/5$; $V$ = vocabulary size |
-| **3. Lấy topic distribution** | $O(n \cdot K)$ | $n$ = số token; $K$ = số topics (~15-30) |
-| **4. Normalize topic vector** | $O(K)$ | Chia vector cho tổng |
-| **5. Tìm nhánh prefix trong Trie** | $O(L)$ | $L$ = độ dài prefix (~3-5 ký tự) |
-| **6. Duyệt toàn bộ từ khớp** | $O(M)$ | $M$ = số ký tự trong nhánh (khác L) |
-| **7. Heap sort top-K** | $O(N_m \log K)$ | $N_m$ = số từ khớp prefix (~10-100) |
-| **8. Tính điểm (scoring)** | $O(N_m \cdot K)$ | Cosine similarity cho mỗi từ |
-| **9. Lấy top-K cuối cùng** | $O(N_m \log K)$ | QuickSelect hoặc HeapSort |
-
-#### Độ phức tạp tổng thể
-
-$$T(n) = O(C + n \cdot K + L + N_m \cdot K + N_m \log K)$$
-
-**Đơn giản hóa** (bước LDA và scoring chiếm thời gian chủ yếu):
-
-$$T(n) \approx O(n \cdot K + N_m \cdot K)$$
-
-#### Phân tích trường hợp thực tế
-
-Với các giá trị điển hình cho hệ thống:
-
-- $C$ ~100-500 ký tự (context)
-- $n$ ~10-30 token (sau tokenize, loại bỏ stopword)
-- $K$ ~15-30 topics (từ LDA)
-- $L$ ~3-5 ký tự (prefix)
-- $N_m$ ~10-100 từ khớp (phụ thuộc prefix)
-
-| Trường hợp | $n$ | $N_m$ | $K$ | Thời gian (ms) | Ghi chú |
-| --- | --- | --- | --- | --- | --- |
-| **Tốt nhất** | 10 | 10 | 15 | ~2-3 | Prefix đặc thù, context ngắn |
-| **Trung bình** | 20 | 50 | 20 | ~10-15 | Prefix phổ biến, context trung bình |
-| **Xấu nhất** | 30 | 100 | 30 | ~30-50 | Prefix chung (ví dụ "a"), context dài |
-
-#### Kết luận
-
-**Độ phức tạp chủ yếu:** $O((n + N_m) \cdot K)$
-
-- Thường dưới 50ms (phù hợp realtime)
-- Bottleneck chính: Tính điểm ($scoring step$) với $O(N_m \cdot K)$
 
 ---
 
-### 4.7. Kiến trúc tổng thể
+### 4.7. Time Complexity Analysis (Online)
+
+#### Overall Process
+
+The online suggestion pipeline consists of the following main steps:
+
+1. **Tokenize & preprocess the context**
+2. **Infer the topic distribution of the context (Linearized LDA)**
+3. **Retrieve prefix-matching words from the Trie**
+4. **Compute scores for each candidate word**
+5. **Select the top-K results**
+
+#### Step-by-Step Analysis
+
+| Step                                 | Time Complexity         | Description                                             |
+| ------------------------------------ | ----------------------- | ------------------------------------------------------- |
+| **1. Tokenize & preprocess context** | $O(C)$                  | $C$ = length of the context (characters)                |
+| **2. POS tagging & Lemmatization**   | $O(n)$ or $O(n \log V)$ | $n$ = number of tokens (~ $C/5$); $V$ = vocabulary size |
+| **3. Compute topic distribution**    | $O(n \cdot K)$          | $n$ = number of tokens; $K$ = number of topics (~15–30) |
+| **4. Normalize topic vector**        | $O(K)$                  | Normalize by dividing by total sum                      |
+| **5. Traverse Trie prefix branch**   | $O(L)$                  | $L$ = prefix length (~3–5 characters)                   |
+| **6. Traverse all matching words**   | $O(M)$                  | $M$ = total nodes/characters in the subtree             |
+| **7. Heap sort top-K candidates**    | $O(N_m \log K)$         | $N_m$ = number of matched words (~10–100)               |
+| **8. Scoring computation**           | $O(N_m \cdot K)$        | Cosine similarity per word                              |
+| **9. Final top-K selection**         | $O(N_m \log K)$         | Using QuickSelect or HeapSort                           |
+
+
+#### Overall Time Complexity
+
+$$
+T(n) = O(C + n \cdot K + L + N_m \cdot K + N_m \log K)
+$$
+
+**Simplified** (LDA inference and scoring dominate the runtime):
+
+$$
+T(n) \approx O(n \cdot K + N_m \cdot K)
+$$
+
+#### Practical Case Analysis
+
+With typical system values:
+
+* $C$ ~ 100–500 characters (context)
+* $n$ ~ 10–30 tokens (after tokenization and stopword removal)
+* $K$ ~ 15–30 topics (from LDA)
+* $L$ ~ 3–5 characters (prefix)
+* $N_m$ ~ 10–100 matching words (depending on the prefix)
+
+| Case             | $n$ | $N_m$ | $K$ | Time (ms) | Notes                                    |
+| ---------------- | --- | ----- | --- | --------- | ---------------------------------------- |
+| **Best case**    | 10  | 10    | 15  | ~2–3      | Specific prefix, short context           |
+| **Average case** | 20  | 50    | 20  | ~10–15    | Common prefix, moderate context          |
+| **Worst case**   | 30  | 100   | 30  | ~30–50    | Generic prefix (e.g., "a"), long context |
+
+#### Conclusion
+
+**Dominant complexity:** $O((n + N_m) \cdot K)$
+
+* Typically under 50 ms (suitable for real-time systems)
+* Main bottleneck: scoring step with complexity $O(N_m \cdot K)$
+
+
+---
+
+### 4.7. Overall Strcuture 
 
 ```
                  Dataset
@@ -551,229 +598,255 @@ Topic-word matrix         Prefix index
 ```
 
 
-# III. Dữ liệu kiểm thử thuật toán
+# III. Experimental Dataset
 
-## 1. Kích cỡ bộ dữ liệu
+## 1. Dataset Size
 
-Bộ dữ liệu gồm **90,000 tài liệu** (lấy từ *CNN News Corpus*):
+The dataset consists of **90,000 documents** (sourced from the *CNN News Corpus*):
 
-- **Tập huấn luyện (Training set):** 54,000 tài liệu (60%)
-- **Tập xác thực (Validation set):** 18,000 tài liệu (20%)
-- **Tập kiểm thử (Test set):** 18,000 tài liệu (20%)
+* **Training set:** 54,000 documents (60%)
+* **Validation set:** 18,000 documents (20%)
+* **Test set:** 18,000 documents (20%)
 
-## 2. Quy trình cài đặt
+## 2. Implementation Procedure
 
-### 2.1. Chọn các giá trị siêu tham số
+### 2.1. Hyperparameter Selection
 
-Trước khi huấn luyện, xác định các cấu hình mô hình cần so sánh:
+Before training, define the model configurations to compare:
 
-- Số chủ đề: $K = 15, 20, 25, 30$
-- Các tham số Dirichlet: $\alpha$, $\beta$
+* Number of topics: $K = 15, 20, 25, 30$
+* Dirichlet parameters: $\alpha$, $\beta$
 
-Mỗi cấu hình tương ứng với một mô hình LDA khác nhau.
+Each configuration corresponds to a different LDA model.
 
-### 2.2. Huấn luyện mô hình trên tập huấn luyện
+### 2.2. Training on the Training Set
 
-Với mỗi cấu hình:
+For each configuration:
 
-1. Sử dụng **54,000 tài liệu** từ tập huấn luyện
-2. Chạy **Gibbs Sampling** qua nhiều vòng lặp
-3. Sau khi hội tụ, thu được:
-   - Phân phối từ của mỗi chủ đề: $\phi_k$
-   - Phân phối chủ đề của tài liệu: $\theta_d$
+1. Use **54,000 documents** from the training set
+2. Run **Gibbs Sampling** for multiple iterations
+3. After convergence, obtain:
 
-Các tham số này được giữ cố định sau khi huấn luyện.
+   * Topic–word distributions: $\phi_k$
+   * Document–topic distributions: $\theta_d$
 
-### 2.3. Suy diễn chủ đề cho tập xác thực
+These parameters remain fixed after training.
 
-Áp dụng mô hình đã huấn luyện lên **18,000 tài liệu xác thực**:
+### 2.3. Topic Inference on the Validation Set
 
-- Khởi tạo chủ đề cho các từ một cách ngẫu nhiên
+Apply the trained model to **18,000 validation documents**:
 
-Trong quá trình này:
+* Initialize topic assignments randomly
 
-- **Không cập nhật** phân phối chủ đề – từ $\phi_k$
-- Chỉ chạy **Linearized LDA** để suy diễn $\theta_d$ cho tập xác thực
+During this process:
 
-### 2.4. Đánh giá mô hình trên tập xác thực
+* **Do not update** the topic–word distribution $\phi_k$
+* Only perform **Linearized LDA** to infer $\theta_d$ for the validation set
 
-Sau khi suy diễn:
+### 2.4. Model Evaluation on the Validation Set
 
-> Đánh giá các cấu hình thông qua cảm nhận chủ quan của con người. Phương pháp này được lựa chọn thay vì dùng một chỉ số đánh giá (ví dụ như Coherence) là vì hiện vẫn còn nhiều tranh cãi về tính đúng đắn của những chỉ số này vì chúng đôi khi đưa ra kết quả không tương đồng so với chất lượng của topic model.
+After inference:
 
-→ So sánh các cấu hình để chọn mô hình tốt nhất.
+> Evaluate configurations based on human subjective judgment. This approach is chosen instead of relying on metrics (e.g., Coherence), as there is ongoing debate regarding their reliability, since they may not align well with the actual quality of topic models.
 
-Tiếp tục dùng cấu hình tốt nhất này để tìm một hàm Heristic (kết hợp Trie và LDA) cho ra điểm số cao nhất khi tính điểm **Hit@K** (tỷ lệ truy vấn có kết quả đúng nằm trong top K) trên tập Validation.
+→ Compare configurations to select the best model.
 
-### 2.5. Đánh giá tổng quát
+Then, use the best configuration to design a heuristic function (combining Trie and LDA) that achieves the highest **Hit@K** score (the proportion of queries where the correct result appears in the top K) on the validation set.
 
-Sử dụng **18,000 tài liệu kiểm thử** (hoàn toàn độc lập):
+### 2.5. Final Evaluation
 
-- So sánh:
-  - Mô hình kết hợp **Trie Freq + LDA** (cấu hình tốt nhất + Hàm Heuristic đã tìm được)
-  - Mô hình dùng **Trie Freq**
-  - Mô hình chỉ dùng **Trie**
+Use **18,000 test documents** (fully independent):
 
-- Thước đo:
-  - **Hit@K** (tỷ lệ truy vấn có kết quả đúng nằm trong top K)
+* Compare:
 
-## 3. Ý nghĩa của cách chia dữ liệu
+  * Combined model: **Trie Freq + LDA** (best configuration + selected heuristic)
+  * Model using **Trie Freq**
+  * Model using only **Trie**
 
-Cách chia này giúp:
+* Metric:
 
-- Hạn chế **overfitting**
-- Đảm bảo đánh giá khách quan trên dữ liệu chưa từng thấy
-- Phản ánh đúng hiệu suất tổng quát của mô hình
+  * **Hit@K** (the proportion of queries where the correct result appears in the top K)
 
 
-# IV. Kiểm nghiệm
+## 3. Significance of Data Splitting
 
-## 1. Phân tích tập huấn luyện cho LDA
+This data split helps to:
 
-Tập huấn luyện cho LDA bao gồm:
-- Trước khi tiền xử lý:
-  - Số tài liệu: 53 928
-  - Tổng lượng token: 34 707 979
-  - Kích thước tập từ vựng: 189 878
-  - Trung bình độ dài tài liệu: 643.60
-  - Độ lệch chuẩn độ dài tài liệu: 337.28
-- Sau khi tiền xử lý:
-  - Số tài liệu: 53 926
-  - Tổng lượng token: 13 435 668
-  - Kích thước tập từ vựng: 25 185
-  - Trung bình độ dài tài liệu: 249.15
-  - Độ lệch chuẩn độ dài tài liệu: 131.98
+* Reduce **overfitting**
+* Ensure objective evaluation on unseen data
+* Accurately reflect the model’s generalization performance
 
-**Bảng phân tích**
+# IV. Evaluation
+
+## 1. Analysis of the LDA Training Set
+
+The training dataset for LDA includes:
+
+* **Before preprocessing:**
+
+  * Number of documents: 53,928
+  * Total number of tokens: 34,707,979
+  * Vocabulary size: 189,878
+  * Average document length: 643.60
+  * Standard deviation of document length: 337.28
+
+* **After preprocessing:**
+
+  * Number of documents: 53,926
+  * Total number of tokens: 13,435,668
+  * Vocabulary size: 25,185
+  * Average document length: 249.15
+  * Standard deviation of document length: 131.98
+
+**Analysis Table**
+
 
 <figure align="center">
   <img src="https://github.com/Quan064/Word_AutoComlete/blob/main/Dataset/Histogram%20of%20Document%20Lengths.png?raw=true" alt="Not found">
-  <figcaption>Phổ độ dài tài liệu tập huấn luyện của LDA sau khi tiền xử lý</figcaption>
+  <figcaption>Distribution of document lengths in the LDA training set after preprocessing</figcaption>
 </figure>
 
 <figure align="center">
   <img src="https://github.com/Quan064/Word_AutoComlete/blob/main/Dataset/Total%20Tokens.png?raw=true" alt="Not found">
-  <figcaption>Kích thước tập từ vựng trước và sau khi tiền xử lý</figcaption>
+  <figcaption>Vocabulary size before and after preprocessing</figcaption>
 </figure>
 
 <figure align="center">
   <img src="https://github.com/Quan064/Word_AutoComlete/blob/main/Dataset/Vocabulary%20Size.png?raw=true" alt="Not found">
-  <figcaption>Tổng lượng token trước và sau khi tiền xử lý</figcaption>
+  <figcaption>Total number of tokens before and after preprocessing</figcaption>
 </figure>
 
-**Nhận xét**
+**Observations**
 
-Hiệu quả tiền xử lý rất tốt:
-- Vocabulary giảm từ 189,878 → 25,185 (cắt giảm ~87%)
-- Tổng tokens giảm từ 34.7M → 13.4M (cắt giảm ~61%)
-- Chỉ loại bỏ noise, mà còn giữ lại được phần lớn tài liệu (53,928 → 53,926): gần như không mất dữ liệu
+The preprocessing is highly effective:
 
-→ Tập huấn luyện được tiền xử lý rất kỹ, lượng dữ liệu đủ, phân bố hợp lý → điều kiện tốt để huấn luyện LDA với kết quả chất lượng cao
+* Vocabulary reduced from 189,878 → 25,185 (~87% reduction)
+* Total tokens reduced from 34.7M → 13.4M (~61% reduction)
+* Not only noise is removed, but most documents are preserved (53,928 → 53,926): almost no data loss
 
-## 2. Lựa chọn siêu tham số và hàm Heuristic
+→ The training set is thoroughly preprocessed, with sufficient data and a well-balanced distribution → providing strong conditions for training LDA to achieve high-quality results
 
-### 2.1. Chọn số lượng chủ đề (K) cho LDA
 
-#### Thử nghiệm với các giá trị K khác nhau
+## 2. Hyperparameter Selection and Heuristic Function
 
-Chúng tôi thử nghiệm với các mô hình LDA sử dụng các giá trị K (số lượng chủ đề) khác nhau: $K ∈ \set{5, 10, 15, 20, 25, 30, ..., 400}$
+### 2.1. Choosing the Number of Topics (K) for LDA
 
-#### Phương thức đánh giá
+#### Experiments with Different Values of K
 
-1. **Định tính dựa trên cảm nhận của con người**
-  Cảm thấy K nào có sự phân bổ chủ đề hợp lý hơn thì chọn K đó.
+We experiment with LDA models using different values of $K$ (number of topics):
+$K \in {5, 10, 15, 20, 25, 30, \dots, 400}$
 
-2. **Topic Coherence** ($C_v$ : đánh giá mức độ các từ trong cùng một topic xuất hiện cùng nhau)\
-Mặc dù trước đó đã nói rằng phương thức này không đảm bảo tính đúng đắn nhưng chúng tôi vẫn sẽ chọn một K bằng phương thức này phòng trường hợp này phòng trường hợp nó có thể ra kết quả Hit tốt hơn cho hàm Heuristic.
+#### Evaluation Methods
 
-#### Kết quả
+1. **Qualitative evaluation based on human judgment**
+   Select the value of $K$ that produces the most reasonable topic distributions.
 
-1. **Định tính dựa trên cảm nhận của con người**: K = 20
+2. **Topic Coherence** ($C_v$: measures how frequently words within the same topic co-occur)
+   Although previously noted that this metric may not always be reliable, we still consider selecting a value of $K$ based on this method in case it yields better **Hit@K** performance for the heuristic function.
+
+
+#### Results
+
+1. **Evaluation based on human judgment**: $K = 20$
 
 <figure align="center">
   <img src="https://github.com/Quan064/Word_AutoComlete/blob/main/LDA_CGS/Topic_Distribution_K20.png?raw=true" alt="Not found">
-  <figcaption>Phân bổ chủ để khi số lượng chủ đề là 20</figcaption>
+  <figcaption>Topic distribution when the number of topics is 20</figcaption>
 </figure>
 
-2. **Topic Coherence** ($C_v$): K = 170
+2. **Topic Coherence** ($C_v$): $K = 170$
 
 <figure align="center">
   <img src="https://github.com/Quan064/Word_AutoComlete/blob/main/LDA_CGS/Coherence_K170.png?raw=true" alt="Not found">
-  <figcaption>Điểm Coherence trên tập Validation</figcaption>
+  <figcaption>Coherence score on the validation set</figcaption>
 </figure>
 
-### 2.2. Chọn hàm Heuristic để kết hợp Trie và LDA
+### 2.2. Heuristic Function for Combining Trie and LDA
 
-#### Hàm Heuristic tìm được
+#### Selected Heuristic Function
 
 $$\text{score}(w) = \frac{\log(\text{freq}(w) + 1)}{\log(\text{maxˍfreq} + 1)} \times \left(1 + \alpha \cdot \text{cosineˍsim}(\text{topic}(w), \text{topic}(\text{context}))^2\right)$$
 
-Trong đó:
-- $w$ : từ được gợi ý
-- $\text{freq}(w)$ : tần suất từ $w$ trong tập huấn luyện
-- $\text{maxˍfreq}$ : tần suất cao nhất trong vocabulary
-- $\text{topic}(w)$ : phân bố chủ đề của từ $w$ (vector K chiều)
-- $\text{topic}(\text{context})$ : phân bố chủ đề của ngữ cảnh hiện tại
-- $\alpha$ : hyperparameter điều chỉnh trọng số của "topic relevance" (thường $\alpha \in [0.5, 2.0]$)
 
-#### Phân tích từng thành phần
+Where:
 
-**1. Phần tần suất: $\frac{\log(\text{freq}(w) + 1)}{\log(\text{maxˍfreq} + 1)}$**
+* $w$: suggested word
+* $\text{freq}(w)$: frequency of word $w$ in the training set
+* $\text{maxˍfreq}$: maximum frequency in the vocabulary
+* $\text{topic}(w)$: topic distribution of word $w$ (K-dimensional vector)
+* $\text{topic}(\text{context})$: topic distribution of the current context
+* $\alpha$: hyperparameter controlling the weight of topic relevance (typically $\alpha \in [0.5, 2.0]$)
 
-| Đặc tính | Giải thích |
-| --- | --- |
-| **Tại sao logarit?** | Tần suất thô có dạng power-law (một vài từ rất phổ biến) → log giúp chuẩn hóa |
-| **Tại sao +1?** | Tránh $\log(0)$ khi freq=0 |
-| **Phạm vi giá trị** | $[0, 1]$ → dễ kết hợp với phần khác |
-| **Ý nghĩa** | Tránh từ rất phổ biến làm lấn át những từ có ý nghĩa topic khác |
 
-**2. Phần chủ đề: $1 + \alpha \cdot \text{cosineˍsim}(...)^2$**
+#### Component Analysis
 
-| Đặc tính | Giải thích |
-| --- | --- |
-| **Cosine similarity** | Đo góc giữa hai vector topic → [0, 1] |
-| **Bình phương (^2)** | Khuếch đại sự khác biệt (amplify difference) → topic relevance rõ ràng hơn |
-| **$1 +$ phía trước** | Đảm bảo từ hoàn toàn không liên quan (sim=0) vẫn có score > 0 |
-| **Hyperparameter $\alpha$** | Điều chỉnh mức độ "topic sensitivity" |
+**1. Frequency Component: $\frac{\log(\text{freq}(w) + 1)}{\log(\text{maxˍfreq} + 1)}$**
 
-#### Tại sao nhân hai phần lại với nhau?
+
+| Property           | Explanation                                                                                                |
+| ------------------ | ---------------------------------------------------------------------------------------------------------- |
+| **Why logarithm?** | Raw frequencies follow a power-law distribution (a few words are extremely frequent) → log helps normalize |
+| **Why +1?**        | Avoid $\log(0)$ when freq = 0                                                                              |
+| **Value range**    | $[0, 1]$ → easy to combine with other components                                                           |
+| **Meaning**        | Prevent overly frequent words from dominating more semantically relevant ones                              |
+
+**2. Topic Component: $1 + \alpha \cdot \text{cosineˍsim}(...)^2$**
+
+| Property                    | Explanation                                                              |
+| --------------------------- | ------------------------------------------------------------------------ |
+| **Cosine similarity**       | Measures the angle between two topic vectors → range [0, 1]              |
+| **Squared term ($^2$)**     | Amplifies differences → clearer topic relevance                          |
+| **Leading $1 +$**           | Ensures that completely unrelated words (sim = 0) still have a score > 0 |
+| **Hyperparameter $\alpha$** | Controls the level of topic sensitivity                                  |
+
+
+#### Why Multiply the Two Components?
 
 $$\text{score}(w) = \underbrace{\frac{\log(\text{freq})}{\log(\text{maxˍfreq})}}_\text{phần A: popularity} \times \underbrace{(1 + \alpha \cdot \text{sim}^2)}_\text{phần B: relevance}$$
 
-**Ý tưởng:**
-- Từ phủ hợp ngữ cảnh nhưng hiếm → score vừa phải
-- Từ phổ biến nhưng không phù hợp → score thấp
-- Từ vừa phổ biến vừa phù hợp → score cao
+**Intuition:**
 
-#### Lưu ý
+* A contextually relevant but rare word → moderate score
+* A frequent but irrelevant word → low score
+* A word that is both frequent and contextually relevant → high score
 
-Việc thử nghiệm hàm Heuristic và hyperparameter α được thực hiện trên tập Validation.
+#### Note
 
-### 2.3 Kết luận
+The heuristic function and hyperparameter $\alpha$ are tuned using the validation set.
 
-- K tốt nhất: 20
-- Alpha tốt nhất theo với độ dài prefix từ 1 đến 6: [0.1, 0.5, 1.0, 1.5, 2.0, 2.5]
+### 2.3 Conclusion
 
-## 3. Kết quả đánh giá tổng thể
+* Best $K$: 20
+* Best $\alpha$ values corresponding to prefix lengths from 1 to 6:
+  $[0.1, 0.5, 1.0, 1.5, 2.0, 2.5]$
 
-Đánh giá tổng thể mô hình được thực hiện trên tập Test (18 000 tài liệu), với mỗi tài liệu chọn 10 token  ngẫu nhiên làm query.
+
+## 3. Overall Evaluation Results
+
+The overall evaluation is conducted on the test set (18,000 documents), where 10 random tokens are selected from each document as queries.
 
 <figure align="center">
   <img src="https://github.com/Quan064/Word_AutoComlete/blob/main/Analysis/Model_comp.png?raw=true" alt="Not found">
-  <figcaption>Bảng so sánh tổng thể mô hình autocomplete trên tập Test (query each prefix length ~1.8 triệu)</figcaption>
+  <figcaption>Overall comparison of autocomplete models on the test set (queries for each prefix length ~1.8 million)</figcaption>
 </figure>
 
-### Nhận xét
+### Observations
 
-Bảng so sánh mô hình cho thấy kêt quả của Trie + LDA không có tính vượt trội rõ ràng so với Trie Freq. Mặt khác, nếu tập test có độ loãng chủ đề của ngữ cảnh lớn hơn, điểm của Trie + LDA và Trie Freq khả năng cao là sẽ hoàn toàn trùng khớp.
+The comparison shows that the Trie + LDA model does not demonstrate a clearly superior performance compared to Trie Freq. Moreover, if the test set contains contexts with higher topic dispersion, the performance of Trie + LDA and Trie Freq is likely to converge.
 
-Dưới đây là một số nguyên nhân mà chúng tôi nghi ngờ là đang gây ra tình trạng này:
+Below are some possible reasons for this outcome:
 
-1. **Từ trong tài liệu đa số không nhiều ý nghĩa hoặc không theo chủ đề tổng**: Tần suất từ từ Trie Freq đã đủ để xác định gợi ý, thông tin chủ đề từ LDA không cung cấp thêm lợi thế đáng kể.
+1. **Words in documents are often not strongly semantic or topic-specific**:
+   Word frequency (Trie Freq) is already sufficient for generating good suggestions, and topic information from LDA does not provide significant additional benefit.
 
-2. **Linearized LDA mất thông tin**: Sử dụng trung bình cộng đơn giản thay vì Collapsed Gibbs Sampling đầy đủ, dẫn tới giảm độ chính xác.
+2. **Information loss in Linearized LDA**:
+   Using simple averaging instead of full Collapsed Gibbs Sampling reduces inference accuracy.
 
-3. **Hàm Heuristic chưa tối ưu**: Phần tần suất chiếm trọng lực lớn, "lấn át" phần chủ đề. Hyperparameter $\alpha$ có thể cần điều chỉnh thêm.
+3. **Suboptimal heuristic function**:
+   The frequency component may dominate the scoring, overshadowing the topic component. The hyperparameter $\alpha$ may require further tuning.
+
+4. **CGS is limited in capturing semantic relationships**:
+   CGS relies on co-occurrence statistics and does not truly capture semantic similarity between words. For example, words like "neural" and "deep" may not be considered semantically close if they appear in different contexts within the corpus. In contrast, word embeddings (e.g., Word2Vec, FastText, BERT) can capture deeper semantic relationships and potentially improve suggestion quality.
 
 4. **CGS chưa đủ mạnh để capture semantic relationships**: CGS dựa trên co-occurrence statistics, không thực sự hiểu được semantic similarity giữa các từ. Ví dụ, từ "neural" và "deep" có thể không được coi là gần nhau về mặt ngữ nghĩa vì chúng xuất hiện ở vị trí khác nhau trong corpus. Word embeddings (Word2Vec, FastText, BERT) có khả năng capture được các mối quan hệ ngữ nghĩa sâu hơn, giúp cải thiện chất lượng gợi ý.
 
