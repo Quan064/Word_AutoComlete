@@ -290,7 +290,7 @@ After many iterations, CGS yields:
 
 #### Step 1 - Data Collection and Preprocessing
 
-* **LDA**
+* **LDA** and **Trie**
 
   * **Lowercase**: convert all text to lowercase
   * **Tokenization**: transform text into discrete units (usually words) called tokens
@@ -299,17 +299,9 @@ After many iterations, CGS yields:
   * **Space removal**: remove extra whitespace
   * **Stopword removal**: remove stopwords (words that contribute little semantic meaning)
   * **POS filtering**: retain only informative parts of speech (nouns, verbs, adjectives)
-  * **Extreme words filtering**: remove very rare or overly frequent words
   * **Lemmatization**: reduce different forms of a word to a single canonical form
 
-* **Trie**
-
-  * **Tokenization**
-  * **Non-alphabetic tokens filtering**
-  * **Punctuation removal**
-  * **Space removal**
-
-The additional steps in LDA (Stopword removal, POS filtering, Extreme words filtering, and Lemmatization) help reduce computational cost by eliminating high-frequency but semantically insignificant words, which may otherwise introduce noise into the model.
+The steps in LDA and Trie(Stopword removal, POS filtering, and Lemmatization) help reduce computational cost by eliminating high-frequency but semantically insignificant words, which may otherwise introduce noise into the model.
 
 
 #### Step 2 - Training LDA
@@ -827,8 +819,68 @@ Below are some possible reasons for this outcome:
 4. **CGS is limited in capturing semantic relationships**:
    CGS relies on co-occurrence statistics and does not truly capture semantic similarity between words. For example, words like "neural" and "deep" may not be considered semantically close if they appear in different contexts within the corpus. In contrast, word embeddings (e.g., Word2Vec, FastText, BERT) can capture deeper semantic relationships and potentially improve suggestion quality.
 
-4. **CGS chưa đủ mạnh để capture semantic relationships**: CGS dựa trên co-occurrence statistics, không thực sự hiểu được semantic similarity giữa các từ. Ví dụ, từ "neural" và "deep" có thể không được coi là gần nhau về mặt ngữ nghĩa vì chúng xuất hiện ở vị trí khác nhau trong corpus. Word embeddings (Word2Vec, FastText, BERT) có khả năng capture được các mối quan hệ ngữ nghĩa sâu hơn, giúp cải thiện chất lượng gợi ý.
+# V. The Application
 
-# V. Cách chạy chương trình
+## 1. The Application Interface and User Interaction
 
-# VI. Kết luận
+After receiving the Trie + LDA model, we build the auto-suggestion application by using Streamlit - an open-source Python framework that allows developers to create and share custom web apps for machine learning and data science. 
+
+Our application works as follow:
+
+* When the user accesses the application, it will load all needed components (including the pre-trained Trie + LDA model, the widgets (user input section, application settings (theme mode), the text deletion button, and the model's information (the size of the dictionary, the model's status))).
+* The user then writes texts into the input section, and the application will bring out suggested words (5 words at most due to the application's settings).
+* The user then can choose one of the suggested words by clicking the word's button, and the application will fill the chosen word into the input section.
+* When receiving the chosen word, the user can choose to continue writing and by doing so, receiving suggested words, or deletting the whole text input by clicking the all-text deletion button. The user can also self-delete the texts by using the backspace in the keyboard.
+
+##2. The Strengths of The Application
+
+The Streamlit application has several strengths, including:
+
+* **Quick user interface and model loading:** The application loads all needed components quickly and efficiently.
+* **Quick word suggestion:** The application suggests words based on the current prefix in the input section with low latency.
+* **Quick word-filling into the input section:** The application fills the chosen word into the input section in a short amount of time.
+* **Having a huge word dictionary thanks to the Trie model:** The application receives the dictionary of 61 815 distinct vocabularies.
+* **Saving user's input history (when the user clicks the deletion button):** The application can save previous texts when users clicked the text-deletion button.
+* **Personal customization (changing theme: Light/Dark/System mode):**
+
+##3. The Drawback of The Application
+
+Despite the strong points of the application, there is a weakness that we have not been able to deal with:
+
+* **The lost of the mouse cursor's current position when receiving chosen words into the input section:** We noticed that when filling the chosen word into a long input paragraph, the application failed to keep track of the last position of the paragraph (the chosen word's position). Unfortunately, we have not yet found a proper way to solve this irritating issue, partly due to the lack of time.
+
+# VI. Conclusion
+
+Although the results between Trie with Frequency and Trie with Frequency and LDA Context are not varied much from each other, it is still suitable to build a realtime auto-suggestion application due to its efficient word-suggestion speed. If possible, we wish we were able to improve the model's performance more and tackle the application's weakness.
+
+## Member's Job Division
+**Thong Minh Quan, Leader:** 
+*Suggesting the project, the trie, and LDA model.
+*Assigning jobs to every team members.
+*Supervising other members' jobs.
+*Writing teamwork's rules.
+*Implementing the trie, the model.
+*Writing the readme report.
+*Creating videos.
+*Talking about the project in the videos.
+
+**Hoang Nguyen The Hien, Team Member:**
+*Suggesting Streamlit to build the application.
+*Finding information about the evaluation method.
+*Supervising other members' jobs.
+*Doing the data-preprocessing task.
+*Implementing and improving the trie, the LDA model, and the Hit@K comparison between the three methods.
+*Implementing the Streamlit application.
+*Writing the readme report.
+*Talking about the project in the videos.
+
+**Vo Le Nam Khanh Ann, Team Member:**
+*Suggesting evaluation method.
+*Finding information about the evaluation method.
+*Supervising other members' jobs.
+*Doing the data-preprocessing task.
+*Writing the readme report.
+*Creating videos.
+*Talking about the project in the videos.
+
+*Project Dataset: 
