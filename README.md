@@ -832,7 +832,7 @@ Our application works as follow:
 * The user then can choose one of the suggested words by clicking the word's button, and the application will fill the chosen word into the input section.
 * When receiving the chosen word, the user can choose to continue writing and by doing so, receiving suggested words, or deletting the whole text input by clicking the all-text deletion button. The user can also self-delete the texts by using the backspace in the keyboard.
 
-##2. The Strengths of The Application
+## 2. The Strengths of The Application
 
 The Streamlit application has several strengths, including:
 
@@ -843,7 +843,7 @@ The Streamlit application has several strengths, including:
 * **Saving user's input history (when the user clicks the deletion button):** The application can save previous texts when users clicked the text-deletion button.
 * **Personal customization (changing theme: Light/Dark/System mode):**
 
-##3. The Drawback of The Application
+## 3. The Drawback of The Application
 
 Despite the strong points of the application, there is a weakness that we have not been able to deal with:
 
@@ -854,33 +854,57 @@ Despite the strong points of the application, there is a weakness that we have n
 Although the results between Trie with Frequency and Trie with Frequency and LDA Context are not varied much from each other, it is still suitable to build a realtime auto-suggestion application due to its efficient word-suggestion speed. If possible, we wish we were able to improve the model's performance more and tackle the application's weakness.
 
 ## Member's Job Division
+
 **Thong Minh Quan, Leader:** 
+
 *Suggesting the project, the trie, and LDA model.
+
 *Assigning jobs to every team members.
+
 *Supervising other members' jobs.
+
 *Writing teamwork's rules.
+
 *Implementing the trie, the model.
+
 *Writing the readme report.
+
 *Creating videos.
+
 *Talking about the project in the videos.
 
 **Hoang Nguyen The Hien, Team Member:**
+
 *Suggesting Streamlit to build the application.
+
 *Finding information about the evaluation method.
+
 *Supervising other members' jobs.
+
 *Doing the data-preprocessing task.
+
 *Implementing and improving the trie, the LDA model, and the Hit@K comparison between the three methods.
+
 *Implementing the Streamlit application.
+
 *Writing the readme report.
+
 *Talking about the project in the videos.
 
 **Vo Le Nam Khanh Ann, Team Member:**
+
 *Suggesting evaluation method.
+
 *Finding information about the evaluation method.
+
 *Supervising other members' jobs.
+
 *Doing the data-preprocessing task.
+
 *Writing the readme report.
+
 *Creating videos.
+
 *Talking about the project in the videos.
 
 *Project Dataset: 
