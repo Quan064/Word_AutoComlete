@@ -1,4 +1,4 @@
-# TOPIC-AWARE AUTOCOMPLETE
+﻿# TOPIC-AWARE AUTOCOMPLETE
 
 # I. Introduction
 
@@ -244,7 +244,7 @@ Consider a specific document $d$:
 
    Formula:
 
-   $$
+  $$
   \frac{n_{d,k}+\alpha}{\sum^K_in_{d,i}+\alpha K}\times\frac{m_{w,k}+\beta}{\sum^V_im_{i,k}+\beta V}
   $$
 
