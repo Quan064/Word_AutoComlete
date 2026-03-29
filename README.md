@@ -234,10 +234,10 @@ Given a corpus of documents, the number of topics $(K)$, and hyperparameters $\a
 
 Consider a specific document $d$:
 
-2. Count how many times each topic $k$ appears in document $d$.
-3. Count how many times each word appears in each topic across the entire dataset.
-4. In document $d$, remove the current topic assignment of a word $w_{d,n}$.
-5. Assign a new topic to $w_{d,n}$ based on:
+1. Count how many times each topic $k$ appears in document $d$.
+2. Count how many times each word appears in each topic across the entire dataset.
+3. In document $d$, remove the current topic assignment of a word $w_{d,n}$.
+4. Assign a new topic to $w_{d,n}$ based on:
 
    * Which topics are prevalent in document $d$ (from step 2)
    * The frequency of $w_{d,n}$ in each topic (from step 3)
@@ -245,10 +245,8 @@ Consider a specific document $d$:
    Formula:
 
    $$
-   \frac{n_{d,k}+\alpha}{\sum^K_i n_{d,i}+\alpha K}
-   \times
-   \frac{m_{w,k}+\beta}{\sum^V_i m_{i,k}+\beta V}
-   $$
+  \frac{n_{d,k}+\alpha}{\sum^K_in_{d,i}+\alpha K}\times\frac{m_{w,k}+\beta}{\sum^V_im_{i,k}+\beta V}
+  $$
 
    Where:
 
